@@ -1,0 +1,21 @@
+[mcp_servers.zhenzhen-nanobanana-mcp]
+command = "uv"
+args = [
+  "--directory",
+  "C:\\MCP\\zhenzhen-nanobanana-mcp",
+  "run",
+  "--no-sync",
+  "python",
+  "-m",
+  "zhenzhen_nanobanana_mcp",
+]
+env_vars = [
+  "NANOBANANA_PROJECT_DIR",
+  "NANOBANANA_BASE_URL",
+  "NANOBANANA_OUTPUT_DIR",
+  "NANOBANANA_TIMEOUT_SECONDS",
+  "NANOBANANA_CONCURRENCY",
+  "NANOBANANA_MAX_PENDING_TASKS",
+]
+startup_timeout_sec = 30
+tool_timeout_sec = 1800

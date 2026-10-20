@@ -1,0 +1,1425 @@
+{
+  "tools": [
+    {
+      "name": "list_models",
+      "title": "List Models",
+      "description": "列出七个模型（含 2k/4k 变体）、API 格式、访问目录与限制；不联网、不返回密钥。",
+      "inputSchema": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {}
+      },
+      "execution": null,
+      "outputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "models": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "api_formats": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "default_model": {
+            "type": "string"
+          },
+          "default_api_format": {
+            "type": "string"
+          },
+          "max_batch_items": {
+            "type": "integer"
+          },
+          "max_reference_images": {
+            "type": "integer"
+          },
+          "concurrency_per_process": {
+            "description": "兼容字段：本机配置上限；实际按共享输出目录的SQLite账本限制并发。",
+            "type": "integer"
+          },
+          "concurrency_scope": {
+            "const": "shared_output_directory",
+            "default": "shared_output_directory",
+            "type": "string"
+          },
+          "input_dirs": {
+            "description": "兼容字段，始终为空列表，表示没有目录白名单。",
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "local_file_access": {
+            "const": "readable_files",
+            "type": "string"
+          },
+          "output_dir": {
+            "type": "string"
+          },
+          "api_key_configured": {
+            "type": "boolean"
+          },
+          "upstream_verified": {
+            "default": false,
+            "type": "boolean"
+          },
+          "capabilities": {
+            "additionalProperties": {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            "type": "object"
+          },
+          "supported_endpoints": {
+            "additionalProperties": {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            "type": "object"
+          },
+          "async_tasks": {
+            "default": true,
+            "type": "boolean"
+          },
+          "max_pending_tasks": {
+            "default": 200,
+            "type": "integer"
+          },
+          "reference_input_note": {
+            "default": "Gemini/Chat多模态和Generations参考图编码未在本次收费实测；nano-banana-pro仅DALL·E，Edits重复image字段。",
+            "type": "string"
+          }
+        },
+        "required": [
+          "models",
+          "api_formats",
+          "default_model",
+          "default_api_format",
+          "max_batch_items",
+          "max_reference_images",
+          "concurrency_per_process",
+          "input_dirs",
+          "local_file_access",
+          "output_dir",
+          "api_key_configured"
+        ],
+        "type": "object"
+      },
+      "icons": null,
+      "annotations": {
+        "title": null,
+        "readOnlyHint": true,
+        "destructiveHint": null,
+        "idempotentHint": null,
+        "openWorldHint": false
+      },
+      "_meta": {
+        "fastmcp": {
+          "tags": []
+        }
+      }
+    },
+    {
+      "name": "plan_ecommerce_images",
+      "title": "Plan Ecommerce Images",
+      "description": "免费生成可审阅的主图/详情页/场景/海报绘图计划。\n\nscene: main 主图；detail 详情模块；scene 家居场景；poster 营销海报。\nselling_points: 已核实事实，可为空列表；不自动编造商品信息。\ncount: 图片项数，详情页推荐 6 项；比例由用户决定。\nreference_images: 原样传入计划，真正出图前才读取/下载并校验。\nresolution: 可选显式 width/height 像素尺寸，原样传入每项用于模型路由。",
+      "inputSchema": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "product_name": {
+            "maxLength": 200,
+            "minLength": 1,
+            "type": "string"
+          },
+          "selling_points": {
+            "items": {
+              "maxLength": 500,
+              "minLength": 1,
+              "type": "string"
+            },
+            "maxItems": 20,
+            "type": "array"
+          },
+          "scene": {
+            "default": "main",
+            "enum": [
+              "main",
+              "detail",
+              "scene",
+              "poster"
+            ],
+            "type": "string"
+          },
+          "count": {
+            "default": 1,
+            "maximum": 12,
+            "minimum": 1,
+            "type": "integer"
+          },
+          "aspect_ratio": {
+            "default": "1:1",
+            "enum": [
+              "4:3",
+              "3:4",
+              "16:9",
+              "9:16",
+              "2:3",
+              "3:2",
+              "1:1",
+              "4:5",
+              "5:4",
+              "21:9"
+            ],
+            "type": "string"
+          },
+          "reference_images": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "maxItems": 4,
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "requirements": {
+            "default": "",
+            "maxLength": 2000,
+            "type": "string"
+          },
+          "copy_text": {
+            "default": "",
+            "maxLength": 1000,
+            "type": "string"
+          },
+          "resolution": {
+            "anyOf": [
+              {
+                "additionalProperties": false,
+                "properties": {
+                  "width": {
+                    "description": "用户显式指定的宽度，单位 px。",
+                    "exclusiveMinimum": 0,
+                    "type": "integer"
+                  },
+                  "height": {
+                    "description": "用户显式指定的高度，单位 px。",
+                    "exclusiveMinimum": 0,
+                    "type": "integer"
+                  }
+                },
+                "required": [
+                  "width",
+                  "height"
+                ],
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          }
+        },
+        "required": [
+          "product_name",
+          "selling_points"
+        ]
+      },
+      "execution": null,
+      "outputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "product_name": {
+            "type": "string"
+          },
+          "scene": {
+            "enum": [
+              "main",
+              "detail",
+              "scene",
+              "poster"
+            ],
+            "type": "string"
+          },
+          "items": {
+            "items": {
+              "additionalProperties": false,
+              "properties": {
+                "prompt": {
+                  "description": "完整绘图/修改提示词；不自动添加平台要求。",
+                  "maxLength": 8000,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                "aspect_ratio": {
+                  "default": "1:1",
+                  "enum": [
+                    "4:3",
+                    "3:4",
+                    "16:9",
+                    "9:16",
+                    "2:3",
+                    "3:2",
+                    "1:1",
+                    "4:5",
+                    "5:4",
+                    "21:9"
+                  ],
+                  "type": "string"
+                },
+                "resolution": {
+                  "anyOf": [
+                    {
+                      "additionalProperties": false,
+                      "properties": {
+                        "width": {
+                          "description": "用户显式指定的宽度，单位 px。",
+                          "exclusiveMinimum": 0,
+                          "type": "integer"
+                        },
+                        "height": {
+                          "description": "用户显式指定的高度，单位 px。",
+                          "exclusiveMinimum": 0,
+                          "type": "integer"
+                        }
+                      },
+                      "required": [
+                        "width",
+                        "height"
+                      ],
+                      "type": "object"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "default": null,
+                  "description": "显式像素尺寸，仅按长边选择模型：≤1024 原版，≤2048 2k，否则 4k；不改变比例或保证输出尺寸。"
+                },
+                "reference_images": {
+                  "description": "本机可读取图片的绝对路径或公开 HTTP/HTTPS 图片 URL，不限制文件目录，无需搬到 input。有参考图即编辑。",
+                  "items": {
+                    "maxLength": 4096,
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "maxItems": 4,
+                  "type": "array"
+                }
+              },
+              "required": [
+                "prompt"
+              ],
+              "type": "object"
+            },
+            "type": "array"
+          },
+          "notes": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "product_name",
+          "scene",
+          "items",
+          "notes"
+        ],
+        "type": "object"
+      },
+      "icons": null,
+      "annotations": {
+        "title": null,
+        "readOnlyHint": true,
+        "destructiveHint": null,
+        "idempotentHint": null,
+        "openWorldHint": false
+      },
+      "_meta": {
+        "fastmcp": {
+          "tags": []
+        }
+      }
+    },
+    {
+      "name": "submit_image_tasks",
+      "title": "Submit Image Tasks",
+      "description": "批量登记1–12个后台图像任务并立即返回，不等待绘图/下载（会在后台收费）。\n\n每项task_id在checkpointer/thread_id内唯一且稳定，同内容复用；任何冲突全批不新增。\n每项可选model/api_format(auto)/endpoint(auto)；变体按显式resolution路由。\nFlash-lite仅Gemini/Chat；nano-banana-pro仅DALL·E；gemini-nano仅DALL·E Generations/Gemini/Chat。\n查询get_image_tasks；queued/preparing/running是正常状态，unknown不能盲目重交。\nMCP进程关闭时未发送任务可在重启后继续，已可能发送任务不自动重试。",
+      "inputSchema": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "checkpointer": {
+            "maxLength": 128,
+            "minLength": 1,
+            "pattern": "^[^\\x00-\\x1f\\x7f]+$",
+            "type": "string"
+          },
+          "thread_id": {
+            "maxLength": 128,
+            "minLength": 1,
+            "pattern": "^[^\\x00-\\x1f\\x7f]+$",
+            "type": "string"
+          },
+          "tasks": {
+            "items": {
+              "additionalProperties": false,
+              "properties": {
+                "prompt": {
+                  "description": "完整绘图/修改提示词；不自动添加平台要求。",
+                  "maxLength": 8000,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                "aspect_ratio": {
+                  "default": "1:1",
+                  "enum": [
+                    "4:3",
+                    "3:4",
+                    "16:9",
+                    "9:16",
+                    "2:3",
+                    "3:2",
+                    "1:1",
+                    "4:5",
+                    "5:4",
+                    "21:9"
+                  ],
+                  "type": "string"
+                },
+                "resolution": {
+                  "anyOf": [
+                    {
+                      "additionalProperties": false,
+                      "properties": {
+                        "width": {
+                          "description": "用户显式指定的宽度，单位 px。",
+                          "exclusiveMinimum": 0,
+                          "type": "integer"
+                        },
+                        "height": {
+                          "description": "用户显式指定的高度，单位 px。",
+                          "exclusiveMinimum": 0,
+                          "type": "integer"
+                        }
+                      },
+                      "required": [
+                        "width",
+                        "height"
+                      ],
+                      "type": "object"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "default": null,
+                  "description": "显式像素尺寸，仅按长边选择模型：≤1024 原版，≤2048 2k，否则 4k；不改变比例或保证输出尺寸。"
+                },
+                "reference_images": {
+                  "description": "本机可读取图片的绝对路径或公开 HTTP/HTTPS 图片 URL，不限制文件目录，无需搬到 input。有参考图即编辑。",
+                  "items": {
+                    "maxLength": 4096,
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "maxItems": 4,
+                  "type": "array"
+                },
+                "task_id": {
+                  "maxLength": 128,
+                  "minLength": 1,
+                  "pattern": "^[^\\x00-\\x1f\\x7f]+$",
+                  "type": "string"
+                },
+                "model": {
+                  "default": "gemini-nano-banana-2.1",
+                  "enum": [
+                    "gemini-3.1-flash-lite-image",
+                    "nano-banana-pro",
+                    "gemini-nano-banana-2.1",
+                    "gemini-nano-banana-2.1-2k",
+                    "gemini-nano-banana-2.1-4k",
+                    "nano-banana-pro-2k",
+                    "nano-banana-pro-4k"
+                  ],
+                  "type": "string"
+                },
+                "api_format": {
+                  "default": "auto",
+                  "enum": [
+                    "auto",
+                    "dalle",
+                    "chat",
+                    "gemini"
+                  ],
+                  "type": "string"
+                },
+                "endpoint": {
+                  "default": "auto",
+                  "enum": [
+                    "auto",
+                    "generations",
+                    "edits"
+                  ],
+                  "type": "string"
+                }
+              },
+              "required": [
+                "prompt",
+                "task_id"
+              ],
+              "type": "object"
+            },
+            "maxItems": 12,
+            "minItems": 1,
+            "type": "array"
+          }
+        },
+        "required": [
+          "checkpointer",
+          "thread_id",
+          "tasks"
+        ]
+      },
+      "execution": null,
+      "outputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "checkpointer": {
+            "title": "Checkpointer",
+            "type": "string"
+          },
+          "thread_id": {
+            "title": "Thread Id",
+            "type": "string"
+          },
+          "tasks": {
+            "items": {
+              "additionalProperties": false,
+              "properties": {
+                "checkpointer": {
+                  "title": "Checkpointer",
+                  "type": "string"
+                },
+                "thread_id": {
+                  "title": "Thread Id",
+                  "type": "string"
+                },
+                "task_id": {
+                  "title": "Task Id",
+                  "type": "string"
+                },
+                "status": {
+                  "enum": [
+                    "queued",
+                    "preparing",
+                    "running",
+                    "succeeded",
+                    "failed",
+                    "unknown",
+                    "cancelled"
+                  ],
+                  "title": "Status",
+                  "type": "string"
+                },
+                "actual_model": {
+                  "enum": [
+                    "gemini-3.1-flash-lite-image",
+                    "nano-banana-pro",
+                    "gemini-nano-banana-2.1",
+                    "gemini-nano-banana-2.1-2k",
+                    "gemini-nano-banana-2.1-4k",
+                    "nano-banana-pro-2k",
+                    "nano-banana-pro-4k"
+                  ],
+                  "title": "Actual Model",
+                  "type": "string"
+                },
+                "api_format": {
+                  "enum": [
+                    "dalle",
+                    "chat",
+                    "gemini"
+                  ],
+                  "title": "Api Format",
+                  "type": "string"
+                },
+                "endpoint": {
+                  "title": "Endpoint",
+                  "type": "string"
+                },
+                "images": {
+                  "items": {
+                    "additionalProperties": false,
+                    "properties": {
+                      "path": {
+                        "title": "Path",
+                        "type": "string"
+                      },
+                      "mime_type": {
+                        "title": "Mime Type",
+                        "type": "string"
+                      },
+                      "width": {
+                        "title": "Width",
+                        "type": "integer"
+                      },
+                      "height": {
+                        "title": "Height",
+                        "type": "integer"
+                      },
+                      "bytes": {
+                        "title": "Bytes",
+                        "type": "integer"
+                      },
+                      "sha256": {
+                        "title": "Sha256",
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "path",
+                      "mime_type",
+                      "width",
+                      "height",
+                      "bytes",
+                      "sha256"
+                    ],
+                    "title": "SavedImage",
+                    "type": "object"
+                  },
+                  "title": "Images",
+                  "type": "array"
+                },
+                "error": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "default": null,
+                  "title": "Error"
+                },
+                "created_at": {
+                  "title": "Created At",
+                  "type": "number"
+                },
+                "updated_at": {
+                  "title": "Updated At",
+                  "type": "number"
+                },
+                "reused": {
+                  "default": false,
+                  "title": "Reused",
+                  "type": "boolean"
+                }
+              },
+              "required": [
+                "checkpointer",
+                "thread_id",
+                "task_id",
+                "status",
+                "actual_model",
+                "api_format",
+                "endpoint",
+                "created_at",
+                "updated_at"
+              ],
+              "title": "TaskResult",
+              "type": "object"
+            },
+            "title": "Tasks",
+            "type": "array"
+          },
+          "next_cursor": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Next Cursor"
+          }
+        },
+        "required": [
+          "checkpointer",
+          "thread_id",
+          "tasks"
+        ],
+        "title": "TaskPage",
+        "type": "object"
+      },
+      "icons": null,
+      "annotations": {
+        "title": null,
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": true
+      },
+      "_meta": {
+        "fastmcp": {
+          "tags": []
+        }
+      }
+    },
+    {
+      "name": "get_image_tasks",
+      "title": "Get Image Tasks",
+      "description": "查询持久任务与图片绝对路径，不重新提交上游。可按task_ids筛选或用next_cursor分页。\n\nqueued/preparing/running正常返回；failed/unknown/cancelled返回isError并保留全部状态。\ncheckpointer是本地SQLite字符串命名空间，不是路径、LangGraph对象或认证凭据。",
+      "inputSchema": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "checkpointer": {
+            "maxLength": 128,
+            "minLength": 1,
+            "pattern": "^[^\\x00-\\x1f\\x7f]+$",
+            "type": "string"
+          },
+          "thread_id": {
+            "maxLength": 128,
+            "minLength": 1,
+            "pattern": "^[^\\x00-\\x1f\\x7f]+$",
+            "type": "string"
+          },
+          "task_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "maxLength": 128,
+                  "minLength": 1,
+                  "pattern": "^[^\\x00-\\x1f\\x7f]+$",
+                  "type": "string"
+                },
+                "maxItems": 100,
+                "minItems": 1,
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "cursor": {
+            "default": 0,
+            "minimum": 0,
+            "type": "integer"
+          },
+          "limit": {
+            "default": 100,
+            "maximum": 100,
+            "minimum": 1,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "checkpointer",
+          "thread_id"
+        ]
+      },
+      "execution": null,
+      "outputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "checkpointer": {
+            "title": "Checkpointer",
+            "type": "string"
+          },
+          "thread_id": {
+            "title": "Thread Id",
+            "type": "string"
+          },
+          "tasks": {
+            "items": {
+              "additionalProperties": false,
+              "properties": {
+                "checkpointer": {
+                  "title": "Checkpointer",
+                  "type": "string"
+                },
+                "thread_id": {
+                  "title": "Thread Id",
+                  "type": "string"
+                },
+                "task_id": {
+                  "title": "Task Id",
+                  "type": "string"
+                },
+                "status": {
+                  "enum": [
+                    "queued",
+                    "preparing",
+                    "running",
+                    "succeeded",
+                    "failed",
+                    "unknown",
+                    "cancelled"
+                  ],
+                  "title": "Status",
+                  "type": "string"
+                },
+                "actual_model": {
+                  "enum": [
+                    "gemini-3.1-flash-lite-image",
+                    "nano-banana-pro",
+                    "gemini-nano-banana-2.1",
+                    "gemini-nano-banana-2.1-2k",
+                    "gemini-nano-banana-2.1-4k",
+                    "nano-banana-pro-2k",
+                    "nano-banana-pro-4k"
+                  ],
+                  "title": "Actual Model",
+                  "type": "string"
+                },
+                "api_format": {
+                  "enum": [
+                    "dalle",
+                    "chat",
+                    "gemini"
+                  ],
+                  "title": "Api Format",
+                  "type": "string"
+                },
+                "endpoint": {
+                  "title": "Endpoint",
+                  "type": "string"
+                },
+                "images": {
+                  "items": {
+                    "additionalProperties": false,
+                    "properties": {
+                      "path": {
+                        "title": "Path",
+                        "type": "string"
+                      },
+                      "mime_type": {
+                        "title": "Mime Type",
+                        "type": "string"
+                      },
+                      "width": {
+                        "title": "Width",
+                        "type": "integer"
+                      },
+                      "height": {
+                        "title": "Height",
+                        "type": "integer"
+                      },
+                      "bytes": {
+                        "title": "Bytes",
+                        "type": "integer"
+                      },
+                      "sha256": {
+                        "title": "Sha256",
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "path",
+                      "mime_type",
+                      "width",
+                      "height",
+                      "bytes",
+                      "sha256"
+                    ],
+                    "title": "SavedImage",
+                    "type": "object"
+                  },
+                  "title": "Images",
+                  "type": "array"
+                },
+                "error": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "default": null,
+                  "title": "Error"
+                },
+                "created_at": {
+                  "title": "Created At",
+                  "type": "number"
+                },
+                "updated_at": {
+                  "title": "Updated At",
+                  "type": "number"
+                },
+                "reused": {
+                  "default": false,
+                  "title": "Reused",
+                  "type": "boolean"
+                }
+              },
+              "required": [
+                "checkpointer",
+                "thread_id",
+                "task_id",
+                "status",
+                "actual_model",
+                "api_format",
+                "endpoint",
+                "created_at",
+                "updated_at"
+              ],
+              "title": "TaskResult",
+              "type": "object"
+            },
+            "title": "Tasks",
+            "type": "array"
+          },
+          "next_cursor": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Next Cursor"
+          }
+        },
+        "required": [
+          "checkpointer",
+          "thread_id",
+          "tasks"
+        ],
+        "title": "TaskPage",
+        "type": "object"
+      },
+      "icons": null,
+      "annotations": {
+        "title": null,
+        "readOnlyHint": true,
+        "destructiveHint": null,
+        "idempotentHint": true,
+        "openWorldHint": false
+      },
+      "_meta": {
+        "fastmcp": {
+          "tags": []
+        }
+      }
+    },
+    {
+      "name": "cancel_image_tasks",
+      "title": "Cancel Image Tasks",
+      "description": "取消指定任务；queued/preparing不发图，running只停止本地等待并标unknown，不保证远端停止/退款。",
+      "inputSchema": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "checkpointer": {
+            "maxLength": 128,
+            "minLength": 1,
+            "pattern": "^[^\\x00-\\x1f\\x7f]+$",
+            "type": "string"
+          },
+          "thread_id": {
+            "maxLength": 128,
+            "minLength": 1,
+            "pattern": "^[^\\x00-\\x1f\\x7f]+$",
+            "type": "string"
+          },
+          "task_ids": {
+            "items": {
+              "maxLength": 128,
+              "minLength": 1,
+              "pattern": "^[^\\x00-\\x1f\\x7f]+$",
+              "type": "string"
+            },
+            "maxItems": 100,
+            "minItems": 1,
+            "type": "array"
+          }
+        },
+        "required": [
+          "checkpointer",
+          "thread_id",
+          "task_ids"
+        ]
+      },
+      "execution": null,
+      "outputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "checkpointer": {
+            "title": "Checkpointer",
+            "type": "string"
+          },
+          "thread_id": {
+            "title": "Thread Id",
+            "type": "string"
+          },
+          "tasks": {
+            "items": {
+              "additionalProperties": false,
+              "properties": {
+                "checkpointer": {
+                  "title": "Checkpointer",
+                  "type": "string"
+                },
+                "thread_id": {
+                  "title": "Thread Id",
+                  "type": "string"
+                },
+                "task_id": {
+                  "title": "Task Id",
+                  "type": "string"
+                },
+                "status": {
+                  "enum": [
+                    "queued",
+                    "preparing",
+                    "running",
+                    "succeeded",
+                    "failed",
+                    "unknown",
+                    "cancelled"
+                  ],
+                  "title": "Status",
+                  "type": "string"
+                },
+                "actual_model": {
+                  "enum": [
+                    "gemini-3.1-flash-lite-image",
+                    "nano-banana-pro",
+                    "gemini-nano-banana-2.1",
+                    "gemini-nano-banana-2.1-2k",
+                    "gemini-nano-banana-2.1-4k",
+                    "nano-banana-pro-2k",
+                    "nano-banana-pro-4k"
+                  ],
+                  "title": "Actual Model",
+                  "type": "string"
+                },
+                "api_format": {
+                  "enum": [
+                    "dalle",
+                    "chat",
+                    "gemini"
+                  ],
+                  "title": "Api Format",
+                  "type": "string"
+                },
+                "endpoint": {
+                  "title": "Endpoint",
+                  "type": "string"
+                },
+                "images": {
+                  "items": {
+                    "additionalProperties": false,
+                    "properties": {
+                      "path": {
+                        "title": "Path",
+                        "type": "string"
+                      },
+                      "mime_type": {
+                        "title": "Mime Type",
+                        "type": "string"
+                      },
+                      "width": {
+                        "title": "Width",
+                        "type": "integer"
+                      },
+                      "height": {
+                        "title": "Height",
+                        "type": "integer"
+                      },
+                      "bytes": {
+                        "title": "Bytes",
+                        "type": "integer"
+                      },
+                      "sha256": {
+                        "title": "Sha256",
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "path",
+                      "mime_type",
+                      "width",
+                      "height",
+                      "bytes",
+                      "sha256"
+                    ],
+                    "title": "SavedImage",
+                    "type": "object"
+                  },
+                  "title": "Images",
+                  "type": "array"
+                },
+                "error": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "default": null,
+                  "title": "Error"
+                },
+                "created_at": {
+                  "title": "Created At",
+                  "type": "number"
+                },
+                "updated_at": {
+                  "title": "Updated At",
+                  "type": "number"
+                },
+                "reused": {
+                  "default": false,
+                  "title": "Reused",
+                  "type": "boolean"
+                }
+              },
+              "required": [
+                "checkpointer",
+                "thread_id",
+                "task_id",
+                "status",
+                "actual_model",
+                "api_format",
+                "endpoint",
+                "created_at",
+                "updated_at"
+              ],
+              "title": "TaskResult",
+              "type": "object"
+            },
+            "title": "Tasks",
+            "type": "array"
+          },
+          "next_cursor": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Next Cursor"
+          }
+        },
+        "required": [
+          "checkpointer",
+          "thread_id",
+          "tasks"
+        ],
+        "title": "TaskPage",
+        "type": "object"
+      },
+      "icons": null,
+      "annotations": {
+        "title": null,
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      },
+      "_meta": {
+        "fastmcp": {
+          "tags": []
+        }
+      }
+    },
+    {
+      "name": "get_batch_result",
+      "title": "Get Batch Result",
+      "description": "读取已登记批次及保存路径，不调用上游、不重发请求；未完成/失败返回 isError。",
+      "inputSchema": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "request_id": {
+            "pattern": "^[A-Za-z0-9_-]{1,64}$",
+            "type": "string"
+          }
+        },
+        "required": [
+          "request_id"
+        ]
+      },
+      "execution": null,
+      "outputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "request_id": {
+            "title": "Request Id",
+            "type": "string"
+          },
+          "batch_id": {
+            "title": "Batch Id",
+            "type": "string"
+          },
+          "model": {
+            "enum": [
+              "gemini-3.1-flash-lite-image",
+              "nano-banana-pro",
+              "gemini-nano-banana-2.1",
+              "gemini-nano-banana-2.1-2k",
+              "gemini-nano-banana-2.1-4k",
+              "nano-banana-pro-2k",
+              "nano-banana-pro-4k"
+            ],
+            "title": "Model",
+            "type": "string"
+          },
+          "api_format": {
+            "enum": [
+              "dalle",
+              "chat",
+              "gemini"
+            ],
+            "title": "Api Format",
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "running",
+              "succeeded",
+              "partial",
+              "failed",
+              "cancelled"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "items": {
+            "items": {
+              "additionalProperties": false,
+              "properties": {
+                "index": {
+                  "title": "Index",
+                  "type": "integer"
+                },
+                "operation": {
+                  "enum": [
+                    "generate",
+                    "edit"
+                  ],
+                  "title": "Operation",
+                  "type": "string"
+                },
+                "actual_model": {
+                  "anyOf": [
+                    {
+                      "enum": [
+                        "gemini-3.1-flash-lite-image",
+                        "nano-banana-pro",
+                        "gemini-nano-banana-2.1",
+                        "gemini-nano-banana-2.1-2k",
+                        "gemini-nano-banana-2.1-4k",
+                        "nano-banana-pro-2k",
+                        "nano-banana-pro-4k"
+                      ],
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "default": null,
+                  "description": "本项路由后的实际模型；旧记录查询时补齐。",
+                  "title": "Actual Model"
+                },
+                "status": {
+                  "default": "pending",
+                  "enum": [
+                    "pending",
+                    "running",
+                    "succeeded",
+                    "failed",
+                    "cancelled"
+                  ],
+                  "title": "Status",
+                  "type": "string"
+                },
+                "images": {
+                  "items": {
+                    "additionalProperties": false,
+                    "properties": {
+                      "path": {
+                        "title": "Path",
+                        "type": "string"
+                      },
+                      "mime_type": {
+                        "title": "Mime Type",
+                        "type": "string"
+                      },
+                      "width": {
+                        "title": "Width",
+                        "type": "integer"
+                      },
+                      "height": {
+                        "title": "Height",
+                        "type": "integer"
+                      },
+                      "bytes": {
+                        "title": "Bytes",
+                        "type": "integer"
+                      },
+                      "sha256": {
+                        "title": "Sha256",
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "path",
+                      "mime_type",
+                      "width",
+                      "height",
+                      "bytes",
+                      "sha256"
+                    ],
+                    "title": "SavedImage",
+                    "type": "object"
+                  },
+                  "title": "Images",
+                  "type": "array"
+                },
+                "error": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "default": null,
+                  "title": "Error"
+                }
+              },
+              "required": [
+                "index",
+                "operation"
+              ],
+              "title": "ItemResult",
+              "type": "object"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "manifest_path": {
+            "title": "Manifest Path",
+            "type": "string"
+          },
+          "reused": {
+            "default": false,
+            "title": "Reused",
+            "type": "boolean"
+          },
+          "warning": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Warning"
+          }
+        },
+        "required": [
+          "request_id",
+          "batch_id",
+          "model",
+          "api_format",
+          "status",
+          "items",
+          "manifest_path"
+        ],
+        "title": "BatchResult",
+        "type": "object"
+      },
+      "icons": null,
+      "annotations": {
+        "title": null,
+        "readOnlyHint": true,
+        "destructiveHint": null,
+        "idempotentHint": true,
+        "openWorldHint": false
+      },
+      "_meta": {
+        "fastmcp": {
+          "tags": []
+        }
+      }
+    }
+  ],
+  "prompts": [
+    {
+      "name": "ecommerce_brief",
+      "title": null,
+      "description": "收集家居日用品绘图所需的事实，规划后由用户决定是否出图。",
+      "arguments": [
+        {
+          "name": "product_name",
+          "title": null,
+          "description": null,
+          "required": true
+        }
+      ],
+      "icons": null,
+      "_meta": {
+        "fastmcp": {
+          "tags": []
+        }
+      }
+    }
+  ],
+  "resources": [
+    {
+      "name": "capabilities",
+      "title": null,
+      "uri": "nanobanana://capabilities",
+      "description": "模型能力、边界与真实联调状态。",
+      "mimeType": "text/plain",
+      "size": null,
+      "icons": null,
+      "annotations": null,
+      "_meta": {
+        "fastmcp": {
+          "tags": []
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,51 @@
+[build-system]
+requires = ["hatchling==1.27.0"]
+build-backend = "hatchling.build"
+
+[project]
+name = "zhenzhen-nanobanana-mcp"
+version = "0.2.0"
+description = "Local ecommerce image generation and editing MCP server"
+readme = "README.md"
+license = "MIT"
+requires-python = "==3.12.14"
+dependencies = [
+  "fastmcp==4.1.0",
+  "httpx==0.28.1",
+  "pillow==12.3.0",
+  "python-dotenv==1.2.4",
+]
+
+[dependency-groups]
+dev = [
+    "ruff==0.14.0",
+    "jsonschema==4.25.1",
+    "hatchling==1.27.0",
+    "pyyaml==6.0.3",
+    "coverage==7.10.6",
+    "mypy==1.18.2",
+    "pip-audit==2.9.0",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/zhenzhen_nanobanana_mcp"]
+
+[tool.hatch.build.targets.sdist]
+include = [
+  "src/**", "tests/**", "scripts/**", "templates/**", "specs/**", "docs/**",
+  "pyproject.toml", "uv.lock", ".python-version", ".mcp.json.example", ".env.example",
+  "README.md", "MANUAL.md", "LICENSE", "user-files.json", "AGENTS.md", "CLAUDE.md", "CONVENTIONS.md",
+  ".github/**", ".gitignore",
+]
+
+[tool.ruff]
+target-version = "py312"
+line-length = 100
+
+[project.urls]
+Repository = "https://github.com/tsyecommercialdesigner-cloud/zhenzhen-nanobanana-mcp"
+Issues = "https://github.com/tsyecommercialdesigner-cloud/zhenzhen-nanobanana-mcp/issues"
+
+[tool.mypy]
+files = ["src"]
+ignore_missing_imports = true
