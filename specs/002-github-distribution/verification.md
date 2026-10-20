@@ -42,3 +42,11 @@ G06未完成：提交/推送迁移分支、创建PR、GitHub实际CI、独立评
 已读取rulesets/25471021、rules/branches/main及branches/main进行只读核验，main.protected=true、实际四项规则均来自该ruleset；rules/branches/dev为空。CI成功后PR仍OPEN、mergeStateStatus=BLOCKED、reviewDecision=REVIEW_REQUIRED、autoMergeRequest=null，证明当前仍受评审门禁约束。没有通过试推main、试合并、删分支等写操作测试门禁，没有添加管理员或机器人绕过。仓库协作者目前只有PR作者一个，需另一个有权限账号完成独立审批；未邀请或私信他人，未降低评审数量。
 
 main仍为ce7ce74a357782fcda820174c60a9c41090d7fa9，README/LICENSE与main一致；未配置/触发Release或收费验收。以上是此验证时点的实际PR与规则状态，后续文档提交会正常重跑dev/PR CI，最终head结果以PR实时检查为准，不预填未来SHA的成功结论。
+
+## 2026-10-20：单人维护审查与合入授权
+
+用户说明本仓库只有本人维护，并明确授权本Agent审查通过后合并PR #1；未授权发布。审查读取当前源码、相关spec/plan/contracts、模型与API矩阵、SQLite原子幂等/owner租约/取消/未知状态、参考图URL与本地路径边界、固定.env解析、stdio错误语义、测试、Windows CI及草稿Release资格检查，未发现阻塞当前源码合入的缺陷。受审业务实现与38885540c0f7b93fcbb6bfab8574b9a06eb4ca66一致，本轮变更仅同步单人维护政策及审查记录，不新增或更改绘图业务逻辑。最终合并须等待这些文档更新对应的PR Windows CI成功并将精确受审SHA写入PR review/comment。
+
+既有PR Windows CI运行39413894145、dev push运行39413887898均在该实现基线上成功，包含68项测试、协议和独立安装等11阶段；原始上游validation资料、真实Codex/DSH及收费验收仍未验证。审查结论仅允许源码集成，不据此宣称完整业务交付或正式发行。未使用第二账号、未虚构独立APPROVED。
+
+由于GitHub不能让PR作者批准自己的PR，按用户直接授权将本仓库改为单人维护：规则集25471021保留active、PR、strict GitHub Actions quality、讨论解决、禁强推/删除和空bypass列表；仅required_approving_review_count改0、require_last_push_approval改false。此调整是已授权的治理政策修订，不通过--admin跳过CI或添加临时绕过身份。正常合并须绑定已审SHA，PR真实合并状态及最终main SHA以GitHub记录为准，不在待合并提交中预填未来合入SHA。Release工作流不触发。

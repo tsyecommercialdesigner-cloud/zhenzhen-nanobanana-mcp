@@ -15,4 +15,4 @@
 
 “本地所有内容”指审查后应入库的源码、测试、锁文件、规范、手册、模板及流水线；`.env`、凭据、业务图片/SQLite、.venv、缓存、dist、ZIP和检查日志仍留本机并由.gitignore排除。默认分支保持main，dev是候选集成分支，不能将dev的CI代替最终main合入SHA的发布资格。
 
-已获授权的范围包括修订计划/草稿流程、恢复远端README/LICENSE、创建dev及提交推送；用户后续另行授权了dev→main PR、Windows CI及main合并门禁。真实Host配置、收费调用、合并和公开仍按后续阶段授权；当前明确不合并、不发布。具体完成状态见002/tasks.md。
+已获授权的范围包括修订计划/草稿流程、恢复远端README/LICENSE、创建dev及提交推送；用户后续另行授权了dev→main PR、Windows CI及main合并门禁。用户现进一步说明仅本人维护，授权本Agent代码审查通过后合并PR；采用审查结论留在PR、GitHub人工批准数为0的单人维护流程，同时保留必需Windows CI和其他main规则。真实Host配置、收费调用及发布仍按后续阶段授权；本次只允许合并，不允许触发草稿或正式发布。具体完成状态见002/tasks.md。
