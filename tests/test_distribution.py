@@ -30,6 +30,8 @@ class DistributionTests(unittest.TestCase):
             self.assertEqual(data["permissions"], {"contents": "read"})
             self.assertNotIn("pull_request_target", data["on"])
             for job in data["jobs"].values():
+                # GitHub resolves job env before a runner exists; runner.temp here rejects the YAML.
+                self.assertNotIn("runner.", json.dumps(job.get("env", {})))
                 for step in job["steps"]:
                     if "uses" in step:
                         self.assertRegex(step["uses"], r"^[\w-]+/[\w-]+@[a-f0-9]{40}$")

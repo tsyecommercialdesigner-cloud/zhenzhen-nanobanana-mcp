@@ -22,3 +22,11 @@ Windows x64、PowerShell7、uv0.12.9、Python3.12.14；业务FastMCP4.1.0/MCP SD
 G06未完成：提交/推送迁移分支、创建PR、GitHub实际CI、独立评审/合入、分支与标签ruleset、release环境审批配置、首个正式Release及其实际远端tag clone验收。AGENTS要求“未经授权不提交、推送、合并或发布”，本次任务未明确授予这些操作。没有正式版本tag/SHA可写入安装说明，成员安装故意在无Release时停止。
 
 完整Git版本切换升级/回滚、四Host新版本业务联调、Linux/macOS及真实收费出图未在本次验证；只验证了独立运行安装和测试.env重装保留，不把它们称为远端发布成功。该项目是本地stdio，服务端远程部署CD不适用；版本发布CD适用但尚未触发。
+
+## 2026-10-20：用户修订及dev导入
+
+用户明确CI只验Windows、公开6工具、先建Release草稿核对后再公开，并授权先从远端main建立dev，再提交推送本地完整项目；README/LICENSE采用main版本。远端dev先创建于ce7ce74a357782fcda820174c60a9c41090d7fa9，随后cb78329bcf6574144a763e39f2c18fb61db7d035上传69个新增文件；GitHub compare证实无README/LICENSE变化，main保持原SHA。六步计划位于docs/DELIVERY-PLAN.md。
+
+导入前重新执行统一11阶段，68项测试通过，99项适用依赖0已知漏洞/0跳过；无收费调用，独立安装保留测试.env和NTFS权限。工作流新增dev push CI及--draft发布，增加草稿安装拒绝/发布边界检查；README被用户指定保留，详细Release链接验证移到MANUAL。
+
+首次上传的远端CI与Release工作流在解析阶段失败、jobs为空：ci第22行及release第31行的作业级env不允许runner.temp。实际失败链接分别为 https://github.com/tsyecommercialdesigner-cloud/zhenzhen-nanobanana-mcp/actions/runs/39412075880 和 https://github.com/tsyecommercialdesigner-cloud/zhenzhen-nanobanana-mcp/actions/runs/39412077017 。已按GitHub官方context availability规则将缓存初始化移至runner步骤，用RUNNER_TEMP写入GITHUB_ENV，并增加job env禁止runner上下文的回归检查。保留首次失败证据，不把本地YAML解析通过当成远端工作流通过。修复后实际CI以GitHub运行结果为准；未触发草稿或正式发布。

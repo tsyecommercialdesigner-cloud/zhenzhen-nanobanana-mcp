@@ -28,8 +28,10 @@ jobs:
       tag: ${{ steps.eligibility.outputs.tag }}
     env:
       TARGET_SHA: ${{ inputs.commit_sha }}
-      UV_CACHE_DIR: ${{ runner.temp }}/nanobanana-release-cache
     steps:
+      - name: Set isolated uv cache on the runner
+        run: |
+          "UV_CACHE_DIR=$env:RUNNER_TEMP/nanobanana-release-cache" >> $env:GITHUB_ENV
       - name: Validate SHA syntax
         run: |
           if ($env:TARGET_SHA -cnotmatch '^[0-9a-f]{40}$') { throw 'Expected complete SHA' }
