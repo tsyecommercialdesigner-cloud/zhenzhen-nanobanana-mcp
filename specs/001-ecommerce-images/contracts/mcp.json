@@ -1,0 +1,914 @@
+{
+  "tools": [
+    {
+      "name": "list_models",
+      "title": "List Models",
+      "description": "列出七个模型（含 2k/4k 变体）、API 格式、访问目录与限制；不联网、不返回密钥。",
+      "inputSchema": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {}
+      },
+      "execution": null,
+      "outputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "models": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "api_formats": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "default_model": {
+            "type": "string"
+          },
+          "default_api_format": {
+            "type": "string"
+          },
+          "max_batch_items": {
+            "type": "integer"
+          },
+          "max_reference_images": {
+            "type": "integer"
+          },
+          "concurrency_per_process": {
+            "type": "integer"
+          },
+          "input_dirs": {
+            "description": "兼容字段，始终为空列表，表示没有目录白名单。",
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "local_file_access": {
+            "const": "readable_files",
+            "type": "string"
+          },
+          "output_dir": {
+            "type": "string"
+          },
+          "api_key_configured": {
+            "type": "boolean"
+          },
+          "upstream_verified": {
+            "default": false,
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "models",
+          "api_formats",
+          "default_model",
+          "default_api_format",
+          "max_batch_items",
+          "max_reference_images",
+          "concurrency_per_process",
+          "input_dirs",
+          "local_file_access",
+          "output_dir",
+          "api_key_configured"
+        ],
+        "type": "object"
+      },
+      "icons": null,
+      "annotations": {
+        "title": null,
+        "readOnlyHint": true,
+        "destructiveHint": null,
+        "idempotentHint": null,
+        "openWorldHint": false
+      },
+      "_meta": {
+        "fastmcp": {
+          "tags": []
+        }
+      }
+    },
+    {
+      "name": "plan_ecommerce_images",
+      "title": "Plan Ecommerce Images",
+      "description": "免费生成可审阅的主图/详情页/场景/海报绘图计划。\n\nscene: main 主图；detail 详情模块；scene 家居场景；poster 营销海报。\nselling_points: 已核实事实，可为空列表；不自动编造商品信息。\ncount: 图片项数，详情页推荐 6 项；比例由用户决定。\nreference_images: 原样传入计划，真正出图前才读取/下载并校验。\nresolution: 可选显式 width/height 像素尺寸，原样传入每项用于模型路由。",
+      "inputSchema": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "product_name": {
+            "maxLength": 200,
+            "minLength": 1,
+            "type": "string"
+          },
+          "selling_points": {
+            "items": {
+              "maxLength": 500,
+              "minLength": 1,
+              "type": "string"
+            },
+            "maxItems": 20,
+            "type": "array"
+          },
+          "scene": {
+            "default": "main",
+            "enum": [
+              "main",
+              "detail",
+              "scene",
+              "poster"
+            ],
+            "type": "string"
+          },
+          "count": {
+            "default": 1,
+            "maximum": 12,
+            "minimum": 1,
+            "type": "integer"
+          },
+          "aspect_ratio": {
+            "default": "1:1",
+            "enum": [
+              "4:3",
+              "3:4",
+              "16:9",
+              "9:16",
+              "2:3",
+              "3:2",
+              "1:1",
+              "4:5",
+              "5:4",
+              "21:9"
+            ],
+            "type": "string"
+          },
+          "reference_images": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "maxItems": 4,
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "requirements": {
+            "default": "",
+            "maxLength": 2000,
+            "type": "string"
+          },
+          "copy_text": {
+            "default": "",
+            "maxLength": 1000,
+            "type": "string"
+          },
+          "resolution": {
+            "anyOf": [
+              {
+                "additionalProperties": false,
+                "properties": {
+                  "width": {
+                    "description": "用户显式指定的宽度，单位 px。",
+                    "exclusiveMinimum": 0,
+                    "type": "integer"
+                  },
+                  "height": {
+                    "description": "用户显式指定的高度，单位 px。",
+                    "exclusiveMinimum": 0,
+                    "type": "integer"
+                  }
+                },
+                "required": [
+                  "width",
+                  "height"
+                ],
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          }
+        },
+        "required": [
+          "product_name",
+          "selling_points"
+        ]
+      },
+      "execution": null,
+      "outputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "product_name": {
+            "type": "string"
+          },
+          "scene": {
+            "enum": [
+              "main",
+              "detail",
+              "scene",
+              "poster"
+            ],
+            "type": "string"
+          },
+          "items": {
+            "items": {
+              "additionalProperties": false,
+              "properties": {
+                "prompt": {
+                  "description": "完整绘图/修改提示词；不自动添加平台要求。",
+                  "maxLength": 8000,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                "aspect_ratio": {
+                  "default": "1:1",
+                  "enum": [
+                    "4:3",
+                    "3:4",
+                    "16:9",
+                    "9:16",
+                    "2:3",
+                    "3:2",
+                    "1:1",
+                    "4:5",
+                    "5:4",
+                    "21:9"
+                  ],
+                  "type": "string"
+                },
+                "resolution": {
+                  "anyOf": [
+                    {
+                      "additionalProperties": false,
+                      "properties": {
+                        "width": {
+                          "description": "用户显式指定的宽度，单位 px。",
+                          "exclusiveMinimum": 0,
+                          "type": "integer"
+                        },
+                        "height": {
+                          "description": "用户显式指定的高度，单位 px。",
+                          "exclusiveMinimum": 0,
+                          "type": "integer"
+                        }
+                      },
+                      "required": [
+                        "width",
+                        "height"
+                      ],
+                      "type": "object"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "default": null,
+                  "description": "显式像素尺寸，仅按长边选择模型：≤1024 原版，≤2048 2k，否则 4k；不改变比例或保证输出尺寸。"
+                },
+                "reference_images": {
+                  "description": "本机可读取图片的绝对路径或公开 HTTP/HTTPS 图片 URL，不限制文件目录，无需搬到 input。有参考图即编辑。",
+                  "items": {
+                    "maxLength": 4096,
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "maxItems": 4,
+                  "type": "array"
+                }
+              },
+              "required": [
+                "prompt"
+              ],
+              "type": "object"
+            },
+            "type": "array"
+          },
+          "notes": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "product_name",
+          "scene",
+          "items",
+          "notes"
+        ],
+        "type": "object"
+      },
+      "icons": null,
+      "annotations": {
+        "title": null,
+        "readOnlyHint": true,
+        "destructiveHint": null,
+        "idempotentHint": null,
+        "openWorldHint": false
+      },
+      "_meta": {
+        "fastmcp": {
+          "tags": []
+        }
+      }
+    },
+    {
+      "name": "generate_images",
+      "title": "Generate Images",
+      "description": "提交 1–12 项独立绘图请求（收费），自动保存图片并返回绝对路径。\n\nrequest_id: 1–64 位字母/数字/下划线/连字符，必须为本次业务稳定且唯一的编号。\nitems: 每项一个提示词及比例；参考图非空执行编辑，否则文生图。\nmodel: 七个模型均支持生成及编辑；default 不代表质量排名。\nitems.resolution: 显式 width/height；长边≤1024 用原版，1024<长边≤2048 用2k，>2048 用4k。\nflash-lite 不路由；未指定尺寸保留所选模型；actual_model 返回每项实际模型。\napi_format: 默认 dalle；chat/gemini 映射尚未做真实上游联调。\n同编号同参数复用持久结果；冲突/中断不重发；部分失败 isError 为 true。\n一项可能返回多张图片（最多 4 张）。无收费 POST 重试。Host 超时建议 1800 秒。",
+      "inputSchema": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "request_id": {
+            "pattern": "^[A-Za-z0-9_-]{1,64}$",
+            "type": "string"
+          },
+          "items": {
+            "items": {
+              "additionalProperties": false,
+              "properties": {
+                "prompt": {
+                  "description": "完整绘图/修改提示词；不自动添加平台要求。",
+                  "maxLength": 8000,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                "aspect_ratio": {
+                  "default": "1:1",
+                  "enum": [
+                    "4:3",
+                    "3:4",
+                    "16:9",
+                    "9:16",
+                    "2:3",
+                    "3:2",
+                    "1:1",
+                    "4:5",
+                    "5:4",
+                    "21:9"
+                  ],
+                  "type": "string"
+                },
+                "resolution": {
+                  "anyOf": [
+                    {
+                      "additionalProperties": false,
+                      "properties": {
+                        "width": {
+                          "description": "用户显式指定的宽度，单位 px。",
+                          "exclusiveMinimum": 0,
+                          "type": "integer"
+                        },
+                        "height": {
+                          "description": "用户显式指定的高度，单位 px。",
+                          "exclusiveMinimum": 0,
+                          "type": "integer"
+                        }
+                      },
+                      "required": [
+                        "width",
+                        "height"
+                      ],
+                      "type": "object"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "default": null,
+                  "description": "显式像素尺寸，仅按长边选择模型：≤1024 原版，≤2048 2k，否则 4k；不改变比例或保证输出尺寸。"
+                },
+                "reference_images": {
+                  "description": "本机可读取图片的绝对路径或公开 HTTP/HTTPS 图片 URL，不限制文件目录，无需搬到 input。有参考图即编辑。",
+                  "items": {
+                    "maxLength": 4096,
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "maxItems": 4,
+                  "type": "array"
+                }
+              },
+              "required": [
+                "prompt"
+              ],
+              "type": "object"
+            },
+            "maxItems": 12,
+            "minItems": 1,
+            "type": "array"
+          },
+          "model": {
+            "default": "gemini-nano-banana-2.1",
+            "enum": [
+              "gemini-3.1-flash-lite-image",
+              "nano-banana-pro",
+              "gemini-nano-banana-2.1",
+              "gemini-nano-banana-2.1-2k",
+              "gemini-nano-banana-2.1-4k",
+              "nano-banana-pro-2k",
+              "nano-banana-pro-4k"
+            ],
+            "type": "string"
+          },
+          "api_format": {
+            "default": "dalle",
+            "enum": [
+              "dalle",
+              "chat",
+              "gemini"
+            ],
+            "type": "string"
+          }
+        },
+        "required": [
+          "request_id",
+          "items"
+        ]
+      },
+      "execution": null,
+      "outputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "request_id": {
+            "title": "Request Id",
+            "type": "string"
+          },
+          "batch_id": {
+            "title": "Batch Id",
+            "type": "string"
+          },
+          "model": {
+            "enum": [
+              "gemini-3.1-flash-lite-image",
+              "nano-banana-pro",
+              "gemini-nano-banana-2.1",
+              "gemini-nano-banana-2.1-2k",
+              "gemini-nano-banana-2.1-4k",
+              "nano-banana-pro-2k",
+              "nano-banana-pro-4k"
+            ],
+            "title": "Model",
+            "type": "string"
+          },
+          "api_format": {
+            "enum": [
+              "dalle",
+              "chat",
+              "gemini"
+            ],
+            "title": "Api Format",
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "running",
+              "succeeded",
+              "partial",
+              "failed",
+              "cancelled"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "items": {
+            "items": {
+              "additionalProperties": false,
+              "properties": {
+                "index": {
+                  "title": "Index",
+                  "type": "integer"
+                },
+                "operation": {
+                  "enum": [
+                    "generate",
+                    "edit"
+                  ],
+                  "title": "Operation",
+                  "type": "string"
+                },
+                "actual_model": {
+                  "anyOf": [
+                    {
+                      "enum": [
+                        "gemini-3.1-flash-lite-image",
+                        "nano-banana-pro",
+                        "gemini-nano-banana-2.1",
+                        "gemini-nano-banana-2.1-2k",
+                        "gemini-nano-banana-2.1-4k",
+                        "nano-banana-pro-2k",
+                        "nano-banana-pro-4k"
+                      ],
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "default": null,
+                  "description": "本项路由后的实际模型；旧记录查询时补齐。",
+                  "title": "Actual Model"
+                },
+                "status": {
+                  "default": "pending",
+                  "enum": [
+                    "pending",
+                    "running",
+                    "succeeded",
+                    "failed",
+                    "cancelled"
+                  ],
+                  "title": "Status",
+                  "type": "string"
+                },
+                "images": {
+                  "items": {
+                    "additionalProperties": false,
+                    "properties": {
+                      "path": {
+                        "title": "Path",
+                        "type": "string"
+                      },
+                      "mime_type": {
+                        "title": "Mime Type",
+                        "type": "string"
+                      },
+                      "width": {
+                        "title": "Width",
+                        "type": "integer"
+                      },
+                      "height": {
+                        "title": "Height",
+                        "type": "integer"
+                      },
+                      "bytes": {
+                        "title": "Bytes",
+                        "type": "integer"
+                      },
+                      "sha256": {
+                        "title": "Sha256",
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "path",
+                      "mime_type",
+                      "width",
+                      "height",
+                      "bytes",
+                      "sha256"
+                    ],
+                    "title": "SavedImage",
+                    "type": "object"
+                  },
+                  "title": "Images",
+                  "type": "array"
+                },
+                "error": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "default": null,
+                  "title": "Error"
+                }
+              },
+              "required": [
+                "index",
+                "operation"
+              ],
+              "title": "ItemResult",
+              "type": "object"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "manifest_path": {
+            "title": "Manifest Path",
+            "type": "string"
+          },
+          "reused": {
+            "default": false,
+            "title": "Reused",
+            "type": "boolean"
+          },
+          "warning": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Warning"
+          }
+        },
+        "required": [
+          "request_id",
+          "batch_id",
+          "model",
+          "api_format",
+          "status",
+          "items",
+          "manifest_path"
+        ],
+        "title": "BatchResult",
+        "type": "object"
+      },
+      "icons": null,
+      "annotations": {
+        "title": null,
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": true
+      },
+      "_meta": {
+        "fastmcp": {
+          "tags": []
+        }
+      }
+    },
+    {
+      "name": "get_batch_result",
+      "title": "Get Batch Result",
+      "description": "读取已登记批次及保存路径，不调用上游、不重发请求；未完成/失败返回 isError。",
+      "inputSchema": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "request_id": {
+            "pattern": "^[A-Za-z0-9_-]{1,64}$",
+            "type": "string"
+          }
+        },
+        "required": [
+          "request_id"
+        ]
+      },
+      "execution": null,
+      "outputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "request_id": {
+            "title": "Request Id",
+            "type": "string"
+          },
+          "batch_id": {
+            "title": "Batch Id",
+            "type": "string"
+          },
+          "model": {
+            "enum": [
+              "gemini-3.1-flash-lite-image",
+              "nano-banana-pro",
+              "gemini-nano-banana-2.1",
+              "gemini-nano-banana-2.1-2k",
+              "gemini-nano-banana-2.1-4k",
+              "nano-banana-pro-2k",
+              "nano-banana-pro-4k"
+            ],
+            "title": "Model",
+            "type": "string"
+          },
+          "api_format": {
+            "enum": [
+              "dalle",
+              "chat",
+              "gemini"
+            ],
+            "title": "Api Format",
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "running",
+              "succeeded",
+              "partial",
+              "failed",
+              "cancelled"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "items": {
+            "items": {
+              "additionalProperties": false,
+              "properties": {
+                "index": {
+                  "title": "Index",
+                  "type": "integer"
+                },
+                "operation": {
+                  "enum": [
+                    "generate",
+                    "edit"
+                  ],
+                  "title": "Operation",
+                  "type": "string"
+                },
+                "actual_model": {
+                  "anyOf": [
+                    {
+                      "enum": [
+                        "gemini-3.1-flash-lite-image",
+                        "nano-banana-pro",
+                        "gemini-nano-banana-2.1",
+                        "gemini-nano-banana-2.1-2k",
+                        "gemini-nano-banana-2.1-4k",
+                        "nano-banana-pro-2k",
+                        "nano-banana-pro-4k"
+                      ],
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "default": null,
+                  "description": "本项路由后的实际模型；旧记录查询时补齐。",
+                  "title": "Actual Model"
+                },
+                "status": {
+                  "default": "pending",
+                  "enum": [
+                    "pending",
+                    "running",
+                    "succeeded",
+                    "failed",
+                    "cancelled"
+                  ],
+                  "title": "Status",
+                  "type": "string"
+                },
+                "images": {
+                  "items": {
+                    "additionalProperties": false,
+                    "properties": {
+                      "path": {
+                        "title": "Path",
+                        "type": "string"
+                      },
+                      "mime_type": {
+                        "title": "Mime Type",
+                        "type": "string"
+                      },
+                      "width": {
+                        "title": "Width",
+                        "type": "integer"
+                      },
+                      "height": {
+                        "title": "Height",
+                        "type": "integer"
+                      },
+                      "bytes": {
+                        "title": "Bytes",
+                        "type": "integer"
+                      },
+                      "sha256": {
+                        "title": "Sha256",
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "path",
+                      "mime_type",
+                      "width",
+                      "height",
+                      "bytes",
+                      "sha256"
+                    ],
+                    "title": "SavedImage",
+                    "type": "object"
+                  },
+                  "title": "Images",
+                  "type": "array"
+                },
+                "error": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "default": null,
+                  "title": "Error"
+                }
+              },
+              "required": [
+                "index",
+                "operation"
+              ],
+              "title": "ItemResult",
+              "type": "object"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "manifest_path": {
+            "title": "Manifest Path",
+            "type": "string"
+          },
+          "reused": {
+            "default": false,
+            "title": "Reused",
+            "type": "boolean"
+          },
+          "warning": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Warning"
+          }
+        },
+        "required": [
+          "request_id",
+          "batch_id",
+          "model",
+          "api_format",
+          "status",
+          "items",
+          "manifest_path"
+        ],
+        "title": "BatchResult",
+        "type": "object"
+      },
+      "icons": null,
+      "annotations": {
+        "title": null,
+        "readOnlyHint": true,
+        "destructiveHint": null,
+        "idempotentHint": true,
+        "openWorldHint": false
+      },
+      "_meta": {
+        "fastmcp": {
+          "tags": []
+        }
+      }
+    }
+  ],
+  "prompts": [
+    {
+      "name": "ecommerce_brief",
+      "title": null,
+      "description": "收集家居日用品绘图所需的事实，规划后由用户决定是否出图。",
+      "arguments": [
+        {
+          "name": "product_name",
+          "title": null,
+          "description": null,
+          "required": true
+        }
+      ],
+      "icons": null,
+      "_meta": {
+        "fastmcp": {
+          "tags": []
+        }
+      }
+    }
+  ],
+  "resources": [
+    {
+      "name": "capabilities",
+      "title": null,
+      "uri": "nanobanana://capabilities",
+      "description": "模型能力、边界与真实联调状态。",
+      "mimeType": "text/plain",
+      "size": null,
+      "icons": null,
+      "annotations": null,
+      "_meta": {
+        "fastmcp": {
+          "tags": []
+        }
+      }
+    }
+  ]
+}

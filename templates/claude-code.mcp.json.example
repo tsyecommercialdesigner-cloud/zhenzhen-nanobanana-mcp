@@ -1,0 +1,18 @@
+{
+  "mcpServers": {
+    "zhenzhen-nanobanana-mcp": {
+      "type": "stdio",
+      "command": "uv",
+      "args": [
+        "--directory",
+        "C:\\MCP\\zhenzhen-nanobanana-mcp",
+        "run",
+        "--no-sync",
+        "python",
+        "-m",
+        "zhenzhen_nanobanana_mcp"
+      ],
+      "timeout": 1800000
+    }
+  }
+}

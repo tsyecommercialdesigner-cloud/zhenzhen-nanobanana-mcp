@@ -1,0 +1,95 @@
+# Secrets and machine-local configuration; commit only empty secret examples.
+.env
+.env.*
+*.env
+*.env.*
+!.env.example
+*.local.json
+*.local.toml
+*.local.yaml
+*.local.yml
+/.git-credentials
+/secrets/
+/credentials/
+.claude/settings.local.json
+.claude/projects/
+.codex/auth.json
+.codex/sessions/
+.codex/log/
+.agents/.local/
+
+# Python environments, compiled files, package metadata and tool caches.
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+.uv-cache/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.pyright/
+.hypothesis/
+.tox/
+.nox/
+
+# Node.js dependencies and caches; retain lockfiles and shared configuration.
+node_modules/
+.npm/
+.pnpm-store/
+.yarn/cache/
+.yarn/unplugged/
+.yarn/install-state.gz
+.eslintcache
+.parcel-cache/
+.turbo/
+*.tsbuildinfo
+
+# Rebuildable output at the project root; outputs/ is intentionally not ignored.
+/dist/
+/build/
+/output/
+
+# Generated test/coverage reports, never test source or safe fixtures.
+.coverage
+.coverage.*
+htmlcov/
+/coverage/
+/coverage.xml
+/junit.xml
+/pytest.xml
+/test-results/
+/test-reports/
+/playwright-report/
+/blob-report/
+/benchmark-results/
+
+# Local runtime state, logs and temporary files.
+.cache/
+/.runtime/
+/runtime-data/
+# Only generated UUID batches and the live ledger; retain outputs templates/docs.
+/outputs/batches.sqlite3*
+/outputs/tasks.sqlite3*
+/outputs/????????????????????????????????/
+/logs/
+/tmp/
+/temp/
+*.log
+*.tmp
+*.temp
+*.pid
+*.pid.lock
+
+# OS/editor-local state; keep shared editor and Agent configuration.
+.DS_Store
+._*
+Thumbs.db
+Desktop.ini
+*.swp
+*.swo
+*~
+.idea/workspace.xml
+.idea/tasks.xml
+.idea/shelf/
