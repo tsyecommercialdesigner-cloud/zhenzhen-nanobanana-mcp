@@ -8,7 +8,7 @@
 - 用户已授权先在GitHub从main创建dev，再把本地审查后的完整项目提交推送到dev。远端dev已首先创建在上述main基线上，本地切换dev跟踪origin/dev；没有重指main或强推。
 - 用户明确放弃本地README.md及LICENSE；已从origin/main恢复并核对Git内容一致。两文件不列为本轮变更，详细安装/使用说明保留在MANUAL.md。
 - 最终范围为 **69个新增文件、0修改、0删除**，包括本报告和修订计划。第一次审查曾有69项（含README修改），后续以本清单取代，不按旧清单覆盖远端README。
-- “所有内容”是应入库的项目文件，不包含真实.env、凭据、私有Host、图片、SQLite、.venv、缓存、dist、ZIP或检查日志。PR/门禁/Host配置/收费/合并及正式发布不由这次dev上传自动授权。
+- “所有内容”是应入库的项目文件，不包含真实.env、凭据、私有Host、图片、SQLite、.venv、缓存、dist、ZIP或检查日志。dev上传本身未自动授权其他阶段；用户随后已单独授权PR/Windows CI/main门禁，Host配置/收费/合并及正式发布仍须后续授权。
 
 ## 首次发现的处置
 
@@ -17,7 +17,7 @@
 | R01 CI平台 | 用户已明确只要求Windows，撤销旧Linux差额要求。CI保留windows-latest，运行dev push、PR及main push的quality；Windows Junction用例保留，不删除覆盖。 |
 | R02 工具数量 | 用户确认实际6工具；契约/手册相符，另有1Prompt/1Resource。不增加占位工具；工程11阶段与工具数量分别记录。 |
 | R03 草稿发布 | release.yml已改为gh release create --draft --verify-tag，不自动转公开。新增/加强隔离检查确保草稿flag存在、无自动edit公开，安装器在下载/安装前拒绝草稿。最终人工核对及公开流程见RELEASE.md。 |
-| R04 门禁 | 初始main无保护/ruleset/release环境，没有因创建dev自动宣称门禁已启用。远端main质量门禁、评审、release环境及标签保护仍为后续阶段。 |
+| R04 门禁 | 初始main无保护/ruleset/release环境；随后按用户单独授权已启用main规则集25471021及PR #1，实际参数和验证见RELEASE.md与002/verification.md。release环境和标签保护仍为发布前阶段；本次未合并或发布。 |
 | R05 上游证据 | API-ENDPOINT.md引用的validation/2026-10-20原始报告缺失，未补造或执行收费探针，003验收记录保留限制。 |
 | R06 维护说明 | RELEASE.md、MANUAL及002规范/任务已同步dev、Windows、6工具、先草稿后核对公开。历史验收记录保留原日期事实，不把本地结果改写为远端成功。 |
 

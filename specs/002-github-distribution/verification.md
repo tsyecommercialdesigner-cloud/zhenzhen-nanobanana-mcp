@@ -32,3 +32,13 @@ G06未完成：提交/推送迁移分支、创建PR、GitHub实际CI、独立评
 首次上传的远端CI与Release工作流在解析阶段失败、jobs为空：ci第22行及release第31行的作业级env不允许runner.temp。实际失败链接分别为 https://github.com/tsyecommercialdesigner-cloud/zhenzhen-nanobanana-mcp/actions/runs/39412075880 和 https://github.com/tsyecommercialdesigner-cloud/zhenzhen-nanobanana-mcp/actions/runs/39412077017 。已按GitHub官方context availability规则将缓存初始化移至runner步骤，用RUNNER_TEMP写入GITHUB_ENV，并增加job env禁止runner上下文的回归检查。保留首次失败证据，不把本地YAML解析通过当成远端工作流通过。修复后实际CI以GitHub运行结果为准；未触发草稿或正式发布。
 
 修复上下文后的dev提交1c3cd7991284eb5fc22e9a7c5bcc3cb42e9d1baf已正常进入Windows quality。运行 https://github.com/tsyecommercialdesigner-cloud/zhenzhen-nanobanana-mcp/actions/runs/39412342771 的前10阶段通过，最后member-install因临时路径含RUNNER~1短名、断言直接比较短名与服务解析后的长名而失败。本机GetShortPathNameW复现：原始Path不等而resolve后相同。verify-install改为先规范化临时根目录，并将所有路径断言按resolve后的真实位置验证、附具名错误，未移除凭据/项目根/.venv隔离/mypy缺失/ACL保留检查。强制子进程TEMP/TMP使用真实8.3别名后重跑空缓存独立安装及两个stdio协议成功（exit0，business_calls0）。后续远端CI需以修复提交实际运行结果确认，不借用前一SHA结果。
+
+## 2026-10-20：PR #1及实际main合并门禁
+
+用户明确授权创建dev→main PR、落实Windows CI与合并门禁，要求不合并、不发布。创建普通OPEN PR https://github.com/tsyecommercialdesigner-cloud/zhenzhen-nanobanana-mcp/pull/1 ，head=dev、base=main、初始head SHA=3bfa17d43aa7cd06a7131fc5e8eba86b919b68cd；已关联当前Codex任务。原dev push CI运行39412877780成功，新的pull_request事件Windows quality运行 https://github.com/tsyecommercialdesigner-cloud/zhenzhen-nanobanana-mcp/actions/runs/39413479488 同样成功，不拿dev push结果冒充PR运行。
+
+远端创建并启用规则集25471021，名称main-pr-windows-quality，链接 https://github.com/tsyecommercialdesigner-cloud/zhenzhen-nanobanana-mcp/rules/25471021 。条件仅refs/heads/main；enforcement=active、bypass_actors=[]。实际规则包含deletion、non_fast_forward、pull_request、required_status_checks：至少1批准、推送后撤销旧批准、最新推送需其他账号批准、所有评审讨论解决；必需quality绑定GitHub Actions app/integration 15368，strict_required_status_checks_policy=true。
+
+已读取rulesets/25471021、rules/branches/main及branches/main进行只读核验，main.protected=true、实际四项规则均来自该ruleset；rules/branches/dev为空。CI成功后PR仍OPEN、mergeStateStatus=BLOCKED、reviewDecision=REVIEW_REQUIRED、autoMergeRequest=null，证明当前仍受评审门禁约束。没有通过试推main、试合并、删分支等写操作测试门禁，没有添加管理员或机器人绕过。仓库协作者目前只有PR作者一个，需另一个有权限账号完成独立审批；未邀请或私信他人，未降低评审数量。
+
+main仍为ce7ce74a357782fcda820174c60a9c41090d7fa9，README/LICENSE与main一致；未配置/触发Release或收费验收。以上是此验证时点的实际PR与规则状态，后续文档提交会正常重跑dev/PR CI，最终head结果以PR实时检查为准，不预填未来SHA的成功结论。
