@@ -21,7 +21,9 @@ def main():
     ]
     archive = ROOT / "dist" / f"zhenzhen_nanobanana_mcp-{version}.tar.gz"
     with tempfile.TemporaryDirectory(prefix="nanobanana-source-install-") as directory:
-        temporary = Path(directory)
+        # Hosted Windows runners can expose TEMP via an 8.3 alias (RUNNER~1).
+        # Compare and launch from canonical paths, like the server's root resolver does.
+        temporary = Path(directory).resolve()
         with tarfile.open(archive) as source:
             for member in source.getmembers():
                 target = (temporary / member.name).resolve()
@@ -80,13 +82,17 @@ def main():
         ]
         run(command, env=env)
         python = project / (".venv/Scripts/python.exe" if os.name == "nt" else ".venv/bin/python")
-        probe = (
-            "from pathlib import Path; import sys, fastmcp, importlib.util; "
-            "from zhenzhen_nanobanana_mcp.config import Settings; s=Settings.from_env(); "
-            "assert s.api_key=='install-check-not-real'; assert s.project_dir==Path(sys.argv[1]); "
-            "assert Path(fastmcp.__file__).is_relative_to(Path(sys.argv[1])/'.venv'); "
-            "assert importlib.util.find_spec('mypy') is None"
-        )
+        probe = """
+from pathlib import Path
+import sys, fastmcp, importlib.util
+from zhenzhen_nanobanana_mcp.config import Settings
+s = Settings.from_env()
+expected = Path(sys.argv[1]).resolve()
+assert s.api_key == 'install-check-not-real', 'project credentials were not loaded'
+assert s.project_dir.resolve() == expected, 'project root differs from installed source'
+assert Path(fastmcp.__file__).resolve().is_relative_to((expected / '.venv').resolve()), 'runtime outside isolated venv'
+assert importlib.util.find_spec('mypy') is None, 'development dependencies leaked into runtime'
+"""
         run([str(python), "-c", probe, str(project)], env=env, cwd=temporary)
         # Equivalent to updating/reinstalling the locked runtime in an existing clone.
         run(command, env=env)

@@ -30,3 +30,5 @@ G06未完成：提交/推送迁移分支、创建PR、GitHub实际CI、独立评
 导入前重新执行统一11阶段，68项测试通过，99项适用依赖0已知漏洞/0跳过；无收费调用，独立安装保留测试.env和NTFS权限。工作流新增dev push CI及--draft发布，增加草稿安装拒绝/发布边界检查；README被用户指定保留，详细Release链接验证移到MANUAL。
 
 首次上传的远端CI与Release工作流在解析阶段失败、jobs为空：ci第22行及release第31行的作业级env不允许runner.temp。实际失败链接分别为 https://github.com/tsyecommercialdesigner-cloud/zhenzhen-nanobanana-mcp/actions/runs/39412075880 和 https://github.com/tsyecommercialdesigner-cloud/zhenzhen-nanobanana-mcp/actions/runs/39412077017 。已按GitHub官方context availability规则将缓存初始化移至runner步骤，用RUNNER_TEMP写入GITHUB_ENV，并增加job env禁止runner上下文的回归检查。保留首次失败证据，不把本地YAML解析通过当成远端工作流通过。修复后实际CI以GitHub运行结果为准；未触发草稿或正式发布。
+
+修复上下文后的dev提交1c3cd7991284eb5fc22e9a7c5bcc3cb42e9d1baf已正常进入Windows quality。运行 https://github.com/tsyecommercialdesigner-cloud/zhenzhen-nanobanana-mcp/actions/runs/39412342771 的前10阶段通过，最后member-install因临时路径含RUNNER~1短名、断言直接比较短名与服务解析后的长名而失败。本机GetShortPathNameW复现：原始Path不等而resolve后相同。verify-install改为先规范化临时根目录，并将所有路径断言按resolve后的真实位置验证、附具名错误，未移除凭据/项目根/.venv隔离/mypy缺失/ACL保留检查。强制子进程TEMP/TMP使用真实8.3别名后重跑空缓存独立安装及两个stdio协议成功（exit0，business_calls0）。后续远端CI需以修复提交实际运行结果确认，不借用前一SHA结果。
