@@ -30,6 +30,8 @@
 
 2026-10-21首次受控草稿运行 [39529304202](https://github.com/tsyecommercialdesigner-cloud/zhenzhen-nanobanana-mcp/actions/runs/39529304202) 在只读资格检查阶段失败：仓库根 REST URL 尾随斜杠导致 HTTP 404，publish 被跳过，没有创建标签或草稿。修复根 URL 构造，并增加实际 Request URL 的回归检查；后续仍须通过 dev→PR→Windows CI→合并及同 SHA main CI，再重新发起草稿流程，不跳过资格检查。
 
+随后 [39530083752](https://github.com/tsyecommercialdesigner-cloud/zhenzhen-nanobanana-mcp/actions/runs/39530083752) 校验和环境审批成功，创建v0.2.0草稿及指向66555d72742cf54b98bd3dc4c57a94d3a98d7818的标签。草稿附件复核发现构建工具的dist/.gitignore被误列入SHA256SUMS；清单改为只计算当前版本的wheel/sdist，并以真实PowerShell步骤测试排除辅助文件、旧包和缺包失败。修复草稿时只允许根据原有两个包的下载哈希重新上传SHA256SUMS，保持标签、两个包和release-eligibility.json不变，并重新下载复核全部附件；不重跑已存在标签的创建流程，不正式公开。草稿说明及修复记录须同时保留，最终状态按GitHub记录核验。
+
 ## 回滚与旧安装
 
 按MANUAL第5节保留.env/ACL、图片、tasks.sqlite3与batches.sqlite3，再切回已记录的SHA、安装该锁及复验协议。0.1不处理新任务队列，保留数据，勿用reset --hard、clean -fdx或删账本绕过问题。
