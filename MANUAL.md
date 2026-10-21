@@ -1,157 +1,116 @@
-# zhenzhen-nanobanana-mcp 使用手册
+# zhenzhen-nanobanana-mcp 交付与使用手册
+
+本手册面向在自己机器上安装服务的成员。完成安装、填写私有配置、协议检查后，在所用客户端中启用 MCP；日常由客户端管理 stdio 子进程。简要入口见 [README](README.md)。
 
 ## 1. 环境准备
 
-成员从GitHub的已验证Release获取源码后，本服务在本机运行，通过 stdio 由客户端启动，面向家居日用百货电商绘图。Windows 运行命令使用 PowerShell 7；Bash/Zsh 注册流程另见第 4 节。远程 HTTP 托管、网关、OAuth、Node.js 初始化均不适用。
+### 安装方式与版本
 
-| 项目 | 实际值/验证范围 |
+默认从[项目 GitHub 仓库](https://github.com/tsyecommercialdesigner-cloud/zhenzhen-nanobanana-mcp.git)取得正式发布标签，安装到 `D:\MCP\zhenzhen-nanobanana-mcp`。本项目只有本地 stdio 服务，没有已部署的 HTTP 服务或网关；不需要 Node.js、npm 或运行项目脚手架。开发仓库、成员安装和各客户端配置是独立位置，不会自动互相更新。
+
+| 项目 | 本项目取值 |
 |---|---|
-| 项目目录 / 发行包 / 服务名 | `zhenzhen-nanobanana-mcp`，服务名无小数点、23 字符，满足本机 DSH 1–32 字符约束 |
-| 导入模块 / 入口 | `zhenzhen_nanobanana_mcp` / `python -m zhenzhen_nanobanana_mcp` |
-| 本地安装目录 | `D:\MCP\zhenzhen-nanobanana-mcp` |
-| Python / 包管理 | 精确 `3.12.14` / 开发机 uv `0.12.9`，依赖由 `uv.lock` 锁定 |
-| 框架 / 底层 SDK | `fastmcp==4.1.0` / `mcp==2.3.0`；采用 FastMCP 是用户指定的项目例外 |
-| MCP 协议 | 子进程检查通过 `2026-07-28` 请求元数据模式和 `2025-11-25` 初始化握手模式；其他旧版本未测试 |
-| Host | Cherry Studio、Codex、Claude Code、DSH 模板；Codex CLI 0.153.0、Claude Code 2.1.258、DSH 0.2.0-rc.2 已核对帮助/schema；Codex app-server、DSH CLI 隔离 profile 的 6 工具发现及免费调用已验证，四个 GUI 业务联调未验证 |
-| 系统 | Windows x64 + Python 3.12.14 已测；Bash/Zsh 示例为 POSIX 路径，Linux/macOS/WSL 未实测 |
+| 项目目录、发行包、服务标识 | `zhenzhen-nanobanana-mcp`（23 字符） |
+| Python 模块 | `zhenzhen_nanobanana_mcp` |
+| 正式安装版本 | [v0.2.1](https://github.com/tsyecommercialdesigner-cloud/zhenzhen-nanobanana-mcp/releases/tag/v0.2.1)，完整 SHA `09501092c369e2a314df757eece5fa8d7a38e64e` |
+| 运行环境 | Windows x64，PowerShell 7，Git；Python 精确 `3.12.14`，已验证 uv `0.12.9` |
+| 框架与 SDK | FastMCP `4.1.0`、MCP SDK `2.3.0`，以项目锁文件为准 |
+| 已验收协议 | `2026-07-28` 请求级元数据模式、兼容 `2025-11-25` 初始化握手模式 |
+| Host 配置 | Cherry Studio、Codex、Claude Code；DSH 共用补丁适用于 web、desktop、multica 三种 profile，需逐份合并 |
+| 实测边界 | Codex app-server 与 DSH CLI 隔离 profile 的工具发现/免费调用已通过；当前 Codex 的 D 盘安装和历史批次查询也已通过。DSH 三种私人 profile 完整配置、Multica 集成、各 GUI 和 Bash/Zsh 执行均未因此视为验证通过 |
 
-安装前需Git（使用`git --version`核对）及PowerShell7，公开仓库HTTPS访问无需GitHub令牌。联网初始化从 PyPI 下载锁定依赖，绘图联网访问 `https://ai.t8star.org`，图片下载访问公开 HTTP/HTTPS 地址。无离线缓存交付。uv 遵从其网络/注册表配置；业务 httpx 禁用环境代理，遵从系统 TLS 校验，不能通过关闭 TLS 来排障。
+正式版本对应 [Windows CI39534145510](https://github.com/tsyecommercialdesigner-cloud/zhenzhen-nanobanana-mcp/actions/runs/39534145510) 及[发布安装验收](docs/RELEASE-0.2.1-ACCEPTANCE.md)。本手册包含发布后的维护说明，不能据此认为旧标签或 Release 附件已重写。现用迁移和后续分支状态见[本机验收](docs/LOCAL-D-DRIVE-MIGRATION-ACCEPTANCE.md)，开发版本不作为默认成员版本。
 
-| 环境变量 | 必填 | 默认/用途 |
+首次安装需访问 GitHub、Python 下载源和 PyPI。公开仓库可 HTTPS clone；私有仓库访问使用成员自己的 Git 凭据管理机制，不在 URL 中写令牌。绘图另需可用的 `https://ai.t8star.org` 账号及模型权限；图片下载访问公开 HTTP/HTTPS 地址。未提供离线依赖包。业务 HTTP 客户端禁用环境代理并校验证书，包管理器的网络设置不能证明业务网络也可用。
+
+### 配置与凭据
+
+实际凭据文件是 `D:\MCP\zhenzhen-nanobanana-mcp\.env`；使用其他安装位置时是该项目实际根目录的 `.env`。不搜索 Host 工作目录或其父目录，不读取 `.env.example` 作为凭据。
+
+| 字段 | 必填/默认 | 读取来源与约束 |
 |---|---|---|
-| `ZHENZHEN_NANOBANANA_API_KEY` | 日常启动必填 | 服务读取项目 `.env`；原始 ASCII 密钥，无内部空白/控制字符，不含 `Bearer `，不要求固定前缀 |
-| `NANOBANANA_PROJECT_DIR` | 否 | 非秘密项目绝对目录；默认从已验证 src 布局定位，特殊 wheel 安装布局需显式指定；其它运行设置仍从进程环境读取 |
-| `NANOBANANA_BASE_URL` | 否 | `https://ai.t8star.org`；HTTPS 服务根地址，无路径/query/凭据；属于操作员信任配置 |
-| `NANOBANANA_INPUT_DIRS` | 已停用 | 旧配置被忽略，不再限制本地图片目录，无需修改已有Host配置即可解除白名单 |
-| `NANOBANANA_OUTPUT_DIR` | 否 | 项目 `outputs`；绝对路径，不随 Host 工作目录改变 |
-| `NANOBANANA_TIMEOUT_SECONDS` | 否 | `300`；1–600，每任务参考图准备、上游绘图及图片下载的整体限时 |
-| `NANOBANANA_MAX_PENDING_TASKS` | 否 | `200`；整数 12–1000，共享账本中 queued/preparing/running 的容量上限 |
-| `NANOBANANA_CONCURRENCY` | 否 | `4`；整数 1–10，同一输出目录的多个服务进程共享并发上限，所有 Host 应采用相同配置 |
+| `ZHENZHEN_NANOBANANA_API_KEY` | 日常启动必填 | 项目 `.env` → 进程环境 → Windows 当前运行账号 `HKCU\Environment`；原始 ASCII 密钥，不加 `Bearer `，无内部空白/控制字符，无固定前缀要求 |
+| `NANOBANANA_PROJECT_DIR` | 默认从源码布局定位 | 进程环境；非秘密绝对目录，特殊 wheel 布局需明确指定 |
+| `NANOBANANA_BASE_URL` | `https://ai.t8star.org` | 进程环境；无路径/query/凭据的 HTTPS 服务根地址 |
+| `NANOBANANA_OUTPUT_DIR` | 项目 `outputs/` | 进程环境；绝对路径，存放图片和 SQLite 账本 |
+| `NANOBANANA_TIMEOUT_SECONDS` | `300` | 进程环境；1–600 秒，单任务准备、绘图与下载的整体限时 |
+| `NANOBANANA_CONCURRENCY` | `4` | 进程环境；整数 1–10，同输出目录各实例设置一致 |
+| `NANOBANANA_MAX_PENDING_TASKS` | `200` | 进程环境；整数 12–1000，限制 queued/preparing/running 项总数 |
 
-实际私有文件为 `D:\MCP\zhenzhen-nanobanana-mcp\.env`；开发时为实际开发项目根目录 `.env`。服务显式定位，不搜索 Host 工作目录/父目录，不把 `.env.example` 当运行凭据。文件仅解析 `ZHENZHEN_NANOBANANA_API_KEY` 凭据字段，不导入 `os.environ`；其它非秘密设置仍从进程环境读取。
+只有密钥字段按上表逐来源回退，其余运行设置不从 `.env` 加载。旧密钥名称不再读取；`NANOBANANA_INPUT_DIRS` 已停用且被忽略，没有本地图片目录白名单。
 
-2026-10-21起，所有凭据来源统一使用上述新名称，旧名称不再读取。升级已有安装时，只重命名私有 `.env` 中的密钥字段，保留值、其它内容及权限；若使用环境变量回退，在对应来源配置新名称并重启服务。不把旧字段静默当作新字段，也不自动删除用户的其它环境变量。
+只有文件/字段缺失才回退；已定义但空、非法、重复、文件不可读/语法错误/非 UTF-8 时立即失败，不使用低优先级旧值。文件最多 1 MiB，UTF-8 可含 BOM，使用锁定的 python-dotenv 底层解析且不展开变量。`${VAR}` 和 `$(command)` 是字面值，不执行。非 Windows 不读取 Windows 用户注册表。
 
-优先级是 **项目 `.env` → 进程环境 → Windows 当前运行账号 HKCU\Environment**。只有文件/字段缺失才回退；字段已定义但空/非法、重复、文件不可读/非 UTF-8/语法错误均拒绝启动，不使用旧密钥。兼容来源中已定义但空/非法也立即失败；全部缺失退出 2。Windows 回退只读当前账号，不访问机器/其他账号或写注册表；非 Windows 仅兼容进程环境。
-
-解析器锁定 `python-dotenv==1.2.4`，采用不展开变量的底层解析；文件 UTF-8（可含 BOM），最多 1 MiB。支持注释、单双引号及解析器转义；未加引号时空白后的 `#` 是注释，紧邻值的 `#` 保留。`${VAR}`、`$(command)` 是字面数据，不执行。密钥拒绝控制字符、非 ASCII、内部空白和完整 Bearer 前缀，约束来自请求头，不虚构供应商密钥前缀。
-
-初始化见第 2 节。默认不创建全局变量、不删除已有旧变量。文件修改后重启实际 MCP 服务子进程，不承诺热加载；启动后 `list_models.api_key_configured` 表示配置是否成功。错误只给字段名/来源/原因，不输出值、文件内容或请求头。真实 `.env` 与秘密备份禁止进入 Git/ZIP。
+`.env` 是明文私有资料，限制到实际服务账号及必要管理员可读写；升级保留内容和访问权限。不要对磁盘根目录递归改 ACL，也不要默认以管理员运行 MCP。修改配置后重启实际 MCP 子进程，再调用免费 `list_models` 核对；该工具仅报告配置是否加载，不返回密钥，也不证明供应商权限或余额正常。
 
 ## 2. 项目初始化
 
-**正式发布状态（2026-10-21）**：[v0.2.1](https://github.com/tsyecommercialdesigner-cloud/zhenzhen-nanobanana-mcp/releases/tag/v0.2.1)已正式公开，标签提交`09501092c369e2a314df757eece5fa8d7a38e64e`通过[Windows CI39534145510](https://github.com/tsyecommercialdesigner-cloud/zhenzhen-nanobanana-mcp/actions/runs/39534145510)，从GitHub发布标签的D盘独立安装及无收费协议验收已通过，见[发布验收](docs/RELEASE-0.2.1-ACCEPTANCE.md)。不要把远端初始提交`ce7ce74a357782fcda820174c60a9c41090d7fa9`当作MCP版本。
+### 首次安装
 
-当前成员安装版本为v0.2.1，纳入D盘默认路径及最新验收文档。下面流程固定安装该正式标签并验证发布记录/CI；[0.2.1准备阶段说明](docs/RELEASE-0.2.1.md)保留历史草稿范围，正式公开及安装结论以[发布验收](docs/RELEASE-0.2.1-ACCEPTANCE.md)为准。已发布版本的标签、说明及附件不因本次手册更新而改变。
-
-默认安装目录为`D:\MCP\zhenzhen-nanobanana-mcp`，安装器默认父目录D:\MCP，四Host模板与下面流程一致；已有其它位置的安装不会自动搬迁。下面流程和[README快速安装](README.md#快速安装与配置)均使用D盘。仍在使用v0.2.0旧脚本的成员可显式传入`-InstallRoot 'D:\MCP'`并调整Host路径；旧发行物保持原样。发布验证在没有正式Release时明确停止，不回退main；升级前保留`.env`与私有图片/账本。
-
-仓库：https://github.com/tsyecommercialdesigner-cloud/zhenzhen-nanobanana-mcp.git 。正式版本与验收记录从 [Releases](https://github.com/tsyecommercialdesigner-cloud/zhenzhen-nanobanana-mcp/releases) 取得；[CI](https://github.com/tsyecommercialdesigner-cloud/zhenzhen-nanobanana-mcp/actions/workflows/ci.yml) 与发布记录必须对应同一完整SHA。仓库公开，HTTPS clone无需密钥；不要把GitHub令牌放入URL。以后改为私有时使用自己的SSH或Git凭据管理器授权，业务API密钥不能用于Git认证。
-
-### 首次安装：取正式标签并核验完整提交
-
-需要Git、PowerShell7、uv0.12.9，uv按`.python-version`使用Python3.12.14。只创建安装父目录，clone自动创建项目目录；不能覆盖已有安装。以下PowerShell流程指定已正式发布的v0.2.1，核对Release返回的标签、验收记录及完整SHA，不从包版本推测发布状态：
+先核对[正式 Release](https://github.com/tsyecommercialdesigner-cloud/zhenzhen-nanobanana-mcp/releases/tag/v0.2.1)及其 `release-eligibility.json` 的标签、完整提交和 CI。下面在 PowerShell 7 运行：只创建父目录，由 clone 创建同名项目目录；目录已存在时改用第 5 节，不能覆盖。
 
 ```powershell
 $ErrorActionPreference = 'Stop'
-$Repository = 'tsyecommercialdesigner-cloud/zhenzhen-nanobanana-mcp'
-$ApiRoot = "https://api.github.com/repos/$Repository"
-$RepositoryUrl = "https://github.com/$Repository.git"
 $ProjectDir = 'D:\MCP\zhenzhen-nanobanana-mcp'
 $ReleaseTag = 'v0.2.1'
-if (Test-Path -LiteralPath $ProjectDir) { throw '目录已存在，改用第5节升级/旧安装迁移流程。' }
-try { $Release = Invoke-RestMethod "$ApiRoot/releases/tags/$ReleaseTag" }
-catch { throw '尚无正式Release或GitHub访问失败；停止安装，不回退main。' }
-if ($Release.draft -or $Release.prerelease -or $Release.tag_name -cne $ReleaseTag) { throw '不是指定的正式版本。' }
-$Assets = @($Release.assets | Where-Object { $_.name -eq 'release-eligibility.json' })
-if ($Assets.Count -ne 1) { throw '缺少发布验收记录。' }
-$EvidenceBody = (Invoke-WebRequest $Assets[0].browser_download_url).Content
-if ($EvidenceBody -is [byte[]]) { $EvidenceBody = [Text.Encoding]::UTF8.GetString($EvidenceBody) }
-$Evidence = ConvertFrom-Json -InputObject $EvidenceBody
-$ExpectedCommit = $Evidence.commit
-if ($ExpectedCommit -cnotmatch '^[0-9a-f]{40}$' -or $Evidence.tag -cne $ReleaseTag -or $Evidence.version -cne $ReleaseTag.Substring(1)) { throw '标签/版本/SHA记录不一致。' }
-$CiPattern = '^https://github\.com/' + [regex]::Escape($Repository) + '/actions/runs/([0-9]+)$'
-if ($Evidence.ci_run -cnotmatch $CiPattern) { throw 'CI链接不是本仓库。' }
-$CiRunId = $Matches[1]
-$Ci = Invoke-RestMethod "$ApiRoot/actions/runs/$CiRunId"
-$Repo = Invoke-RestMethod $ApiRoot
-if ($Ci.status -ne 'completed' -or $Ci.conclusion -ne 'success' -or $Ci.head_sha -cne $ExpectedCommit -or $Ci.event -ne 'push' -or $Ci.head_branch -cne $Repo.default_branch -or $Ci.path -ne '.github/workflows/ci.yml') { throw '目标提交CI未通过。' }
-$Jobs = Invoke-RestMethod "$ApiRoot/actions/runs/$CiRunId/jobs?per_page=100"
-if (!@($Jobs.jobs | Where-Object { $_.name -eq 'quality' -and $_.conclusion -eq 'success' }).Count -or @($Jobs.jobs | Where-Object { $_.conclusion -ne 'success' }).Count) { throw '必需任务未全部通过。' }
-New-Item -ItemType Directory -Path 'D:\MCP' -Force | Out-Null
-git clone --branch $ReleaseTag --single-branch $RepositoryUrl $ProjectDir
-if ($LASTEXITCODE -ne 0) { throw 'clone失败，停止安装。' }
+$ExpectedCommit = '09501092c369e2a314df757eece5fa8d7a38e64e'
+if (Test-Path -LiteralPath $ProjectDir) { throw '目录已存在，请使用升级或迁移流程。' }
+New-Item -ItemType Directory -Path (Split-Path -Parent $ProjectDir) -Force | Out-Null
+git clone --branch $ReleaseTag --single-branch 'https://github.com/tsyecommercialdesigner-cloud/zhenzhen-nanobanana-mcp.git' $ProjectDir
+if ($LASTEXITCODE -ne 0) { throw '仓库获取失败。' }
 $ActualCommit = git -C $ProjectDir rev-parse HEAD
-if ($LASTEXITCODE -ne 0 -or $ActualCommit -cne $ExpectedCommit) { throw '安装提交与发布记录不一致。' }
-Write-Host "安装版本：$ReleaseTag，提交：$ActualCommit"
+if ($LASTEXITCODE -ne 0 -or $ActualCommit -cne $ExpectedCommit) { throw '标签提交不匹配，停止安装。' }
+$Evidence = & (Join-Path $ProjectDir 'scripts\install-from-github.ps1') -Tag $ReleaseTag -VerifyOnly
+if ($Evidence.Commit -cne $ExpectedCommit -or $Evidence.Tag -cne $ReleaseTag) { throw '发布记录不匹配。' }
 uv --directory $ProjectDir sync --locked --no-dev
-if ($LASTEXITCODE -ne 0) { throw '运行依赖安装失败，停止启动。' }
+if ($LASTEXITCODE -ne 0) { throw '运行依赖安装失败。' }
 pwsh -NoProfile -File (Join-Path $ProjectDir 'scripts\smoke-test.ps1')
-if ($LASTEXITCODE -ne 0) { throw '协议检查失败。' }
+if ($LASTEXITCODE -ne 0) { throw '隔离协议检查失败。' }
 ```
 
-clone标签后detached HEAD是固定版本的正常状态。不要重新`uv init`、删除锁或使用全局pip。无Node构建或extra；Python安装会构建本项目所需的editable元数据，日常启动不执行安装/构建。首次初始化需联网访问GitHub、Python下载源和锁定包源；失败停止，不自动升级。
+`-VerifyOnly` 只读取正式 Release、验收附件和对应 main CI，核对 `quality` 成功，不安装、不写凭据；缺少记录、GitHub 限流或网络失败时停止，不回退 main。已有可信开发 checkout 的维护者也可使用其中的 `scripts/install-from-github.ps1 -Tag v0.2.1 -InstallRoot 'D:\MCP'` 完成同等检查和安装，不能在尚未取得源码时执行不存在的相对脚本。
 
-维护者已有完整checkout时，也可运行 `pwsh -NoProfile -File './scripts/install-from-github.ps1' -Tag 'v0.2.1' -InstallRoot 'D:\MCP'`，其执行同等发布验证、clone、无开发依赖安装及协议检查；`-InstallRoot`只指定安装父目录，v0.2.1省略时也为D盘。`-VerifyOnly`只返回经过API核验的Tag/Commit/CI，不安装。不要从未知来源复制或未审阅即执行远程脚本。普通成员可直接使用上面的完整流程。
+detached HEAD 是固定发布标签安装的正常状态。依赖落在项目独立 `.venv`；`uv sync --locked --no-dev` 会准备运行环境，不删除锁、不用全局 pip、不重新 `uv init`。日常启动使用 `--no-sync`，不安装、构建或升级依赖。没有额外 Node 构建或必选 extra。
 
-首次配置，只复制并打开空值模板，不把密钥写入共享命令/历史；已有文件保留：
+### 安全创建私有 .env
+
+安装及隔离协议检查不需要真实密钥。准备连接 Host 前，在本机编辑器填写项目 `.env`；下面只创建空模板，已有文件保持不变，命令不包含真实密钥：
 
 ```powershell
 $ErrorActionPreference = 'Stop'
 $ProjectDir = 'D:\MCP\zhenzhen-nanobanana-mcp'
 $EnvPath = Join-Path $ProjectDir '.env'
-$EnvExamplePath = Join-Path $ProjectDir '.env.example'
 if (Test-Path -LiteralPath $EnvPath) {
-  Write-Host '保留已有 .env，请检查需要更新的字段。'
+  Write-Host '保留已有 .env，只手工合并必要字段。'
 } else {
-  if (!(Test-Path -LiteralPath $EnvExamplePath -PathType Leaf)) { throw '缺少 .env.example。' }
-  [IO.File]::Copy($EnvExamplePath, $EnvPath, $false)
+  [IO.File]::Copy((Join-Path $ProjectDir '.env.example'), $EnvPath, $false)
 }
-notepad.exe $EnvPath
-if ($LASTEXITCODE -ne 0) { throw '无法打开 .env，请使用本地文本编辑器。' }
+Start-Process -FilePath 'notepad.exe' -ArgumentList ('"{0}"' -f $EnvPath) -ErrorAction Stop
 ```
 
-在本地编辑器中将 `ZHENZHEN_NANOBANANA_API_KEY=` 空值填为原始服务密钥，UTF-8 保存。空模板不能直接启动日常服务；如确需兼容旧环境来源，应明确移除文件中的字段，不能留空。文件是明文，需限制读取权限。以下 NTFS ACL 示例用于自己拥有的文件，限定当前运行账号、SYSTEM 和 Administrators；服务账号不同时替换当前账号 SID，权限不足由文件所有者处理，不默认要求管理员运行 MCP：
-
-```powershell
-$ErrorActionPreference = 'Stop'
-$EnvPath = 'D:\MCP\zhenzhen-nanobanana-mcp\.env'
-$TaskSid = [Security.Principal.WindowsIdentity]::GetCurrent().User
-$TaskAcl = Get-Acl -LiteralPath $EnvPath
-$TaskAcl.SetAccessRuleProtection($true, $false)
-foreach ($Rule in $TaskAcl.GetAccessRules($true, $false, [Security.Principal.SecurityIdentifier])) {
-  $TaskAcl.RemoveAccessRuleSpecific($Rule)
-}
-foreach ($Sid in @($TaskSid.Value, 'S-1-5-18', 'S-1-5-32-544')) {
-  $Identity = [Security.Principal.SecurityIdentifier]::new($Sid)
-  $Rule = [Security.AccessControl.FileSystemAccessRule]::new($Identity, 'FullControl', 'Allow')
-  $TaskAcl.AddAccessRule($Rule)
-}
-Set-Acl -LiteralPath $EnvPath -AclObject $TaskAcl
-(Get-Acl -LiteralPath $EnvPath).Access | Format-Table IdentityReference, FileSystemRights, AccessControlType, IsInherited
-```
-
-检查不应包含 Everyone/无关账号。POSIX 安全复制空模板并在本地编辑器填写后执行 `chmod 600 "$HOME/MCP/zhenzhen-nanobanana-mcp/.env"`，保留已有文件。上述命令供使用者执行；开发验证不操作你的真实文件或 ACL。
-
-
-开发初始化为`uv sync --locked`，然后运行`uv run --no-sync python scripts/check.py`。成员只安装`--no-dev`即可运行，测试、类型及审计工具仅在开发组。成员不执行测试套件或安装Node依赖。
-
-Bash/Zsh/WSL使用者：该版本成员安装验收以Windows为主，POSIX尚未实测。先从Release核对实际标签/完整SHA和CI，再用自己的POSIX绝对目录clone并执行`uv sync --locked --no-dev`；不要照搬Windows路径。第4节保留对应Host CLI示例及其未实测范围。
+在编辑器中填写 `ZHENZHEN_NANOBANANA_API_KEY=` 的值并以 UTF-8 保存，再按第 1 节核对文件访问权限。空值模板不能启动日常服务；如确需兼容环境来源，须明确移除文件中的字段，不能留空。升级旧配置时只重命名密钥字段，保留密钥值、其他内容及权限，不自动删除用户环境变量。不要把密钥写进 Host JSON/TOML、共享命令或 Git。
 
 ## 3. 可用性测试
 
-项目根目录运行：
+成员可从任意 PowerShell 工作目录运行实际交付脚本：
 
 ```powershell
-pwsh -NoProfile -File '.\scripts\smoke-test.ps1'
-if ($LASTEXITCODE -ne 0) { throw '协议检查失败。' }
+pwsh -NoProfile -File 'D:\MCP\zhenzhen-nanobanana-mcp\scripts\smoke-test.ps1'
+if ($LASTEXITCODE -ne 0) { throw 'MCP 协议检查失败，请查看 stderr。' }
 ```
 
-脚本使用项目 `.venv\Scripts\python.exe`，在临时配置目录写入无真实权限的假凭据，显式定位该目录，从另一个含诱导 `.env` 的 Host cwd 启动两个真实 stdio 服务进程。验证两种协议、6 Tools/1 Prompt/1 Resource、免费计划/空任务查询、缺少参数/非法比例/非法接口的 isError；另验证空文件密钥实例退出 2、stdout 为空、不回退不同环境值且不泄露值。每个请求/启动限时 30 秒，预期 JSON `status: passed`、退出 0；预期拒绝日志在 stderr。
+脚本使用该安装的 `.venv`，在临时目录准备无真实权限的假凭据，从无关 cwd 启动真实 stdio 子进程；不读取成员 `.env`，不提交有效绘图请求。每请求/启动限时 30 秒，成功返回 JSON `status: passed`、退出 0；失败非零并在 stderr 提供诊断。测试空密钥实例预期退出 2，stdout 无额外输出。
 
-POSIX 环境可直接执行 `uv --directory "$HOME/MCP/zhenzhen-nanobanana-mcp" run --no-sync python -m zhenzhen_nanobanana_mcp.smoke`；该脚本的 Windows PowerShell 包装不适用于 POSIX。
+覆盖两种已声明协议、6 Tools/1 Prompt/1 Resource、免费计划/查询、输入错误及配置失败。协议成功不等于当前 Host 已加载真实配置，更不证明真实绘图或所有模型可用。配置客户端后，在该 Host 中调用 `list_models`，核对模型、密钥状态、输出目录，再做免费计划/历史查询；没有出图授权时停在这里。
 
-smoke 不读取成员真实 `.env`，不需要真实密钥，使用隔离假配置/临时输出，不调用合法的收费绘图请求。开发统一检查执行 `uv run --no-sync python scripts/check.py`；仅行为测试可执行 `uv run --no-sync python -m unittest discover -s tests`，需开发依赖；受控样例覆盖新文档支持矩阵的 28 种模型/格式/参考图组合及非法组合、分辨率边界、10 项后台任务、共享并发、幂等、重启与取消；额外 fake provider 子进程测试通过真实 stdio 提交和查询任务。这不等于真实上游或 Host 业务成功，证据见 `specs/003-async-image-tasks/verification.md`。
+| 证据类别 | 已有结果与边界 |
+|---|---|
+| 单元/契约及受控替身 | 幂等、并发、取消/恢复和上游格式映射；[异步验收](specs/003-async-image-tasks/verification.md)，不能冒充真实供应商效果 |
+| 发布安装/协议 | [v0.2.1 安装验收](docs/RELEASE-0.2.1-ACCEPTANCE.md)，Windows、锁定无开发依赖、stdio 与免费能力 |
+| Host | [隔离 Host 验收](docs/HOST-VALIDATION.md)和[当前 Codex 迁移验收](docs/LOCAL-D-DRIVE-MIGRATION-ACCEPTANCE.md)；GUI、DSH 三种完整私人 profile/Multica 仍未验证 |
+| 历史收费业务 | [单张](docs/SINGLE-IMAGE-ACCEPTANCE.md)、[小批量/编辑](docs/BATCH-EDIT-ACCEPTANCE.md)、[10 项](docs/TEN-IMAGE-ACCEPTANCE.md)与迁移后单张；不因改手册重复执行，不覆盖所有模型/格式/变体或真实故障恢复 |
+
+开发者才需 `uv sync --locked` 和 `uv run --no-sync python scripts/check.py`。Linux/macOS/WSL 安装及 Bash/Zsh 示例没有本轮实测结论；POSIX 目录需自行对应，不能在 Git Bash 中粘贴 PowerShell 语法。
 
 ## 4. 客户端配置
 
@@ -161,7 +120,7 @@ smoke 不读取成员真实 `.env`，不需要真实密钥，使用隔离假配�
 | HTTP/代理 Host JSON | 不适用：本项目仅 stdio，未部署 Cherry Studio Proxy/HTTP 网关 |
 | Codex TOML | `templates/codex.config.toml.example` |
 | Claude Code JSON | `templates/claude-code.mcp.json.example`，项目作用域 |
-| DSH profile YAML | `templates/dsh.patch.yml.example`，web 与 desktop 共用 |
+| DSH profile YAML | `templates/dsh.patch.yml.example`，web、desktop、multica 三种 profile 共用 |
 | CLI 注册 | 下方 Codex、Claude Code、DSH × PowerShell/Bash/Zsh；未运行真实用户配置修改 |
 
 所有模板服务名一致，无 `cwd`，用 `uv --directory` 定位。后端服务自己读取 `.env`，Host 默认不设置密钥 env/变量展开；手册内模板与文件逐字同步，JSON 严格解析。Codex 的 env_vars 只允许转发非秘密运行设置。
@@ -246,9 +205,26 @@ codex mcp add zhenzhen-nanobanana-mcp -- uv --directory "$HOME/MCP/zhenzhen-nano
 codex mcp get zhenzhen-nanobanana-mcp || exit 1
 ```
 
-### Claude Code
+### Claude Code / Claude-3p 配置位置
 
-Claude-3p未纳入本项目兼容范围，没有已核实的配置路径/schema，双客户端同时打开配置步骤不适用；不能把Claude Code模板直接当作其适配声明。
+按指南先给出同时打开两个配置位置的快捷命令；只打开已存在的文件，缺失时提示初始化。Claude-3p 尚未纳入本项目已验证 Host，列出路径不代表它已适配；本节只交付 Claude Code 项目作用域 JSON，不将两个客户端的整份配置互换。编辑前为实际要修改的文件创建私有备份，仅合并目标服务，保留无关配置。
+
+```powershell
+$ErrorActionPreference = 'Stop'
+$ConfigFiles = @(
+  (Join-Path $env:USERPROFILE '.claude.json')
+  (Join-Path $env:LOCALAPPDATA 'Claude-3p\claude_desktop_config.json')
+)
+foreach ($ConfigFile in $ConfigFiles) {
+  if (Test-Path -LiteralPath $ConfigFile -PathType Leaf) {
+    Start-Process -FilePath 'notepad.exe' -ArgumentList ('"{0}"' -f $ConfigFile) -ErrorAction Stop
+  } else {
+    Write-Warning "配置文件不存在，请先按对应客户端流程初始化：$ConfigFile"
+  }
+}
+```
+
+`.claude.json` 是 Claude Code 用户状态/配置位置，不能用下方项目 `.mcp.json` 整体覆盖。下方 CLI 明确使用 `--scope project`，应在想启用 MCP 的工作项目中运行，不要求该工作项目就是 MCP Server 安装目录。
 
 合并到当前开发项目 `.mcp.json`，保留无关服务器；这是 Claude Code 项目作用域模板。默认不传密钥 env、不展开凭据变量，服务独立读取自己的 `.env`。保存并重启 Claude Code，按项目 MCP 信任提示启用，再用 `/mcp` 检查连接/工具权限。参数依据 [Claude Code 官方文档](https://code.claude.com/docs/en/mcp)及本机 CLI 帮助。
 
@@ -301,11 +277,51 @@ claude mcp get zhenzhen-nanobanana-mcp || exit 1
 
 注册后在项目 JSON 合并 `timeout: 1800000`，不用增加密钥 env。本机入口是 `claude.exe`；其他 Windows 包装脚本吞掉 `--` 时先核对 `Get-Command claude` 与相应 `.cmd --help`。配置查询不等于绘图业务成功。
 
-### DSH / App（desktop）
+### DSH：原生、App 与 Multica
 
-核对本机 DSH `0.2.0-rc.2` schema：插件 `@deepseek-ai/dsh-mcp-client`，stdio，`serverName` 匹配 `^[A-Za-z0-9_-]{1,32}$`，支持 `toolCallTimeoutMs`。本模板关闭自动重连以减少中断时自动恢复的歧义；服务自身也不重发收费请求。当前 web profile 的 schema 导出报告已有无关 Loader 节点错误，本模板只做局部 schema 验证，不宣称完整 profile 通过。
+同一 stdio YAML 补丁分别合并到三个独立 profile，不修改共享 bundle。仅使用部分客户端时，从下方 `$Profiles` 删除不适用项；不存在的 profile 应先在对应客户端初始化，不能创建空文件冒充初始化。
 
-共用补丁如下。默认不包含密钥 env 或 `!!js` 凭据表达式，服务自己读取项目 `.env`。2026-10-21已验证本机DSH CLI隔离profile加载实际MCP桥接插件、发现6工具并免费调用；未验证现用web/desktop完整profile或GUI。Codex app-server也已通过同范围验收，详情见[Host验收记录](docs/HOST-VALIDATION.md)。
+| 使用方 | profile | 默认 patch 位置（当前用户目录下） |
+|---|---|---|
+| 原生 DSH | `web` | `.dsh\profiles\web\cordis.patch.yml` |
+| DSH App | `desktop` | `.dsh\profiles\desktop\cordis.patch.yml` |
+| Multica 中的 DSH | `multica` | `.dsh\profiles\multica\cordis.patch.yml` |
+
+优先使用当前终端非空白的 `DSH_HOME`，否则取当前用户 `.dsh`。客户端另设运行目录时先调整 `$DshRoot`。以下 PowerShell 7 命令先确认所有目标文件存在，之后为每份文件创建不覆盖的唯一相邻备份，最后打开；它不添加插件、不改写 patch，也不启动客户端：
+
+```powershell
+$ErrorActionPreference = 'Stop'
+$DshRoot = if ([string]::IsNullOrWhiteSpace($env:DSH_HOME)) {
+  Join-Path $env:USERPROFILE '.dsh'
+} else {
+  $env:DSH_HOME
+}
+$Profiles = @('web', 'desktop', 'multica')
+$PatchFiles = @($Profiles | ForEach-Object {
+  Join-Path $DshRoot "profiles\$_\cordis.patch.yml"
+})
+foreach ($PatchFile in $PatchFiles) {
+  if (!(Test-Path -LiteralPath $PatchFile -PathType Leaf)) {
+    throw "配置不存在，请先初始化对应客户端或核对 DSH_HOME：$PatchFile"
+  }
+}
+foreach ($PatchFile in $PatchFiles) {
+  $BackupPath = '{0}.{1}.bak' -f $PatchFile, ([guid]::NewGuid().ToString('N'))
+  [IO.File]::Copy($PatchFile, $BackupPath, $false)
+  Write-Host "备份：$BackupPath"
+}
+foreach ($PatchFile in $PatchFiles) {
+  Start-Process -FilePath 'notepad.exe' -ArgumentList ('"{0}"' -f $PatchFile) -ErrorAction Stop
+}
+```
+
+备份含私有配置，只留本机并保留访问限制。编辑器中逐份处理：
+
+1. 文件只有顶层空列表 `[]`：以完整 YAML 模板替换。
+2. 文件已有 patch：将下面的 `- insert:` 作为同一顶层列表条目追加，保留原有插件、缩进、注释和 `!!js`，不要另加顶层 `[]` 或嵌套完整列表。
+3. 若同一 MCP 实例已存在，就地合并它，不重复插入；保留其他实例。新增实例使用不冲突的唯一 ID，本模板为 `mcp-zhenzhen-nanobanana`。
+
+插件为 `@deepseek-ai/dsh-mcp-client`，本项目既有 DSH `0.2.0-rc.2` 局部 schema 验证记录确认 stdio、1–32 字符服务名和 `toolCallTimeoutMs`。下面是三种 profile 共用的后端配置；不含密钥或 JavaScript 凭据表达式。各客户端实际安装的插件版本与 schema 不一致时先核对，不盲目合并。已有 web Loader 节点错误与本补丁分别处理；不宣称整个私人 profile 通过。
 
 <!-- template:templates/dsh.patch.yml.example -->
 
@@ -332,26 +348,9 @@ claude mcp get zhenzhen-nanobanana-mcp || exit 1
 ```
 <!-- end-template -->
 
-两个独立 profile 路径：
+保存后分别在原生 DSH、App、Multica 中按实际版本重新加载所选 profile 或重启对应 DSH 运行实例；不凭空指定尚未核实的 GUI 按钮。检查补丁加载日志、6 个工具发现，以及工具权限预设：先允许免费计划/查询，收费提交权限由使用者决定。App 或 Multica 可能由宿主管理运行时，不假定全局 `dsh.exe` 与其内置运行时版本相同。
 
-- `C:\Users\<windows_user>\.dsh\profiles\web\cordis.patch.yml`
-- `C:\Users\<windows_user>\.dsh\profiles\desktop\cordis.patch.yml`
-
-`<windows_user>` 是实际登录用户，不需要管理员；若设置了 DSH_HOME，以它为根目录。只编辑当前使用的 profile，不修改共享 bundle。完整备份/打开步骤（只使用一个 profile 时删去另一项）：
-
-```powershell
-$ErrorActionPreference = 'Stop'
-$DshRoot = if ($env:DSH_HOME) { $env:DSH_HOME } else { Join-Path $env:USERPROFILE '.dsh' }
-foreach ($ProfileName in @('web', 'desktop')) {
-  $PatchPath = Join-Path $DshRoot "profiles\$ProfileName\cordis.patch.yml"
-  if (!(Test-Path -LiteralPath $PatchPath -PathType Leaf)) { throw "Profile 未初始化：$ProfileName" }
-  $BackupPath = "$PatchPath.$([guid]::NewGuid().ToString('N')).bak"
-  Copy-Item -LiteralPath $PatchPath -Destination $BackupPath -ErrorAction Stop
-  notepad.exe $PatchPath
-}
-```
-
-若原内容为 `[]`，用模板替换空列表；若已有补丁，把模板的 `- insert:` 块追加为同级列表项，保留已有条目，确保 `mcp-zhenzhen-nanobanana` ID 唯一。已有同名实例时更新它，不再插入。保存并重启对应 web/App（desktop） DSH 运行进程，检查 MCP 工具发现，并在工具权限预设中允许计划/查询工具；收费工具权限按使用者决定。Prompt/Resource 在原生服务发现成功，但 DSH/App（desktop） 是否桥接它们尚未验证。
+已有证据只覆盖实际 DSH CLI 的隔离 profile 工具桥接；三种完整 profile、Multica、GUI 与 Prompt/Resource 桥接均未在本轮实测。工具注册/发现不代表已完成绘图业务验证。
 
 也可先临时加载补丁。PowerShell：
 
@@ -372,7 +371,7 @@ Zsh：
 dsh --profile web --patch "$HOME/MCP/zhenzhen-nanobanana-mcp/templates/dsh.patch.yml.example" || exit 1
 ```
 
-需要 App（desktop） 时将 `web` 改为 `desktop`。`--patch` 只影响本次启动；已合并持久 profile 后不要同时加载同一临时补丁。本机 `dsh --help` 没有 `mcp add`，不要发明该命令。九种 Shell 示例覆盖完整；只核对 PowerShell 下的 CLI 帮助/DSH 局部 schema，实际注册与 Bash/Zsh 执行均未验证。
+需要其他已初始化 profile 时将 `web` 改为 `desktop` 或 `multica`；此命令只用于相应 CLI 运行时，不替代 App/Multica 宿主的启动流程。`--patch` 只影响本次启动；已合并持久 profile 后不要同时加载同一临时补丁。本机 `dsh --help` 没有 `mcp add`，不要发明该命令。九种 Shell 示例覆盖完整；本轮只重新核对安装 CLI 的帮助，未执行真实注册或加载私人 profile；Bash/Zsh、App/Multica 仍未实测。
 
 ## 5. 启动排障
 
@@ -446,7 +445,7 @@ if ($LASTEXITCODE -ne 0) { throw '回滚协议复验失败。' }
 
 源码安装不要求成员下载wheel或ZIP。开发人员在dev分支提交/推送候选代码后，按授权创建dev→main PR；GitHub分支保护要求必需`quality`与评审，release环境要求审批及标签保护。门禁及受控发布流程见[发布说明](docs/RELEASE.md)，v0.2.1的实际发布/安装证据见[验收报告](docs/RELEASE-0.2.1-ACCEPTANCE.md)。后续发布仍需独立授权，本次手册同步不触发发布。六步计划见 docs/DELIVERY-PLAN.md。
 
-### 可选ZIP
+### 可选ZIP（仅按明确需要）
 
 仅保留旧成员明确需要时的补充分发：`pwsh -NoProfile -File './scripts/package-user.ps1'`，白名单`user-files.json`，当前元数据对应输出`output/zhenzhen-nanobanana-mcp-0.2.1-user.zip`（本轮不生成或发布）；已有包拒绝覆盖，可显式指定`-DestinationDirectory`。ZIP只有一个`zhenzhen-nanobanana-mcp/`顶层目录，解压到父目录即可。它不携带.env/依赖环境/开发资料/业务图片，也不能代替GitHub CI与正式版本。完整可选验收仍由`verify-delivery.py`执行，本次不额外发布成员ZIP。
 
@@ -513,7 +512,10 @@ Prompt `ecommerce_brief` 接收必填 string product_name，指导先补充事�
 ```json
 {
   "product_name": "棉麻收纳篮",
-  "selling_points": ["棉麻面料", "可折叠收纳"],
+  "selling_points": [
+    "棉麻面料",
+    "可折叠收纳"
+  ],
   "scene": "detail",
   "count": 10,
   "aspect_ratio": "3:4"
@@ -532,13 +534,18 @@ Prompt `ecommerce_brief` 接收必填 string product_name，指导先补充事�
       "prompt": "制作棉麻收纳篮详情开篇场景；保留参考图的形状、颜色及材质，不添加未提供的配件或文字。",
       "model": "nano-banana-pro",
       "aspect_ratio": "3:4",
-      "reference_images": ["E:\\商品素材\\收纳篮.png"]
+      "reference_images": [
+        "E:\\商品素材\\收纳篮.png"
+      ]
     },
     {
       "task_id": "detail-02",
       "prompt": "极简暖色家居收纳主题背景，留出卖点文案区域，不画具体商品，不添加文字。",
       "aspect_ratio": "3:4",
-      "resolution": {"width": 1536, "height": 2048}
+      "resolution": {
+        "width": 1536,
+        "height": 2048
+      }
     }
   ]
 }
@@ -550,7 +557,10 @@ Prompt `ecommerce_brief` 接收必填 string product_name，指导先补充事�
 {
   "checkpointer": "shop-design",
   "thread_id": "basket-detail-20261020",
-  "task_ids": ["detail-01", "detail-02"]
+  "task_ids": [
+    "detail-01",
+    "detail-02"
+  ]
 }
 ```
 
