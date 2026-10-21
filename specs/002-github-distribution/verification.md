@@ -78,3 +78,13 @@ main仍为ce7ce74a357782fcda820174c60a9c41090d7fa9，README/LICENSE与main一致
 提交清单为README.md、MANUAL.md、scripts/check-docs.py、docs/DELIVERY-PLAN.md、docs/RELEASE.md、三份收费验收文档及002/tasks、002/verification、003/verification，共11个文本文件。图片/SQLite/提示词请求/原始日志/凭据/缓存/依赖与构建产物不入库。完整本地11阶段再次通过，69测试通过、严格依赖审计无告警、构建/stdio/独立安装通过；最终文档一致性、凭据扫描及Git空白复查也通过。该记录不预填远端PR或未来合入SHA的成功状态。
 
 已配置release环境24873880407，required reviewer为唯一维护者、prevent_self_review=false，branch policy只允许main；正常审批不冒充第二账号或管理员绕过。标签规则集25518329 active，refs/tags/v*禁止更新/删除、无绕过身份。main规则集25471021保持strict Actions quality、PR、讨论解决、禁强推/删除和空bypass。后续Release workflow须读取精确main合入SHA的成功CI并重跑检查，再等待环境正常审批，只创建v0.2.0草稿。tag创建后可见，Release不公开；run/SHA/tag/草稿/资产摘要以实际GitHub记录为准，不预填成功。
+
+## 2026-10-21正式公开及GitHub发布版安装
+
+用户明确授权后，v0.2.0正式公开（Release419061687，2026-10-21T02:12:59Z），标签66555d72742cf54b98bd3dc4c57a94d3a98d7818保持不变。重新核对四附件、包SHA256、main CI39529835229及CD39530083752，并通过正式安装器在独立目录从GitHub标签clone，空专用缓存锁定无开发依赖安装，双模式stdio及6工具输入/输出契约通过。免费规划/查询、错误返回、实际根.env优先级及重装字节/ACL保留通过，有效绘图提交0、外部业务联网尝试0、新增收费调用0。完整证据与限制见[正式发布验收](../../docs/RELEASE-ACCEPTANCE.md)，G06.6已完成；G06.5故障恢复仍未实测。
+
+## 同日后续：默认安装盘符与验收归档
+
+默认父目录从C盘改为D:\MCP，项目目录仍为D:\MCP\zhenzhen-nanobanana-mcp。安装脚本、四Host模板、README/MANUAL同步，文档检查增加四模板精确路径一致性。PowerShell AST核对InstallRoot默认值和拼接目录深度，README四段及MANUAL十一段PowerShell示例解析通过；未在真实D盘目录安装或迁移现用服务。完整本地11阶段及71项测试通过，源码/依赖锁/版本/发布工作流未改，未新增收费调用。
+
+本轮归档前述正式Release验收及G06.6状态；README/MANUAL改为实际v0.2.0标签与完整SHA，并明确已发布文件不回写，旧脚本可显式指定D盘InstallRoot。只读快照核对Release419061687及v0.2.0标签；本轮仅经dev/PR/Windows CI合入，不发布版本。

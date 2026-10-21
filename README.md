@@ -7,8 +7,8 @@
 ## 当前状态
 
 - 项目版本：`0.2.0`；Python `3.12.14`，uv `0.12.9`，FastMCP `4.1.0`，MCP SDK `2.3.0`。
-- 已验证的源码提交：`728172caf5794a374dda4c418779d34cd372155d`，对应 [Windows CI](https://github.com/tsyecommercialdesigner-cloud/zhenzhen-nanobanana-mcp/actions/runs/39525493697) 成功。Windows 是当前安装和验收平台；未声明 Linux/macOS 已验收。
-- 截至 2026-10-21，尚无正式 Release。下面提供该固定 CI 提交的试用安装；元数据版本不代表已有 `v0.2.0` 标签。正式发行后按[手册的 Release 安装流程](MANUAL.md#2-项目初始化)获取版本，不在启动时拉取最新 main。
+- 正式版本：[v0.2.0](https://github.com/tsyecommercialdesigner-cloud/zhenzhen-nanobanana-mcp/releases/tag/v0.2.0)，提交 `66555d72742cf54b98bd3dc4c57a94d3a98d7818`，对应 [Windows CI](https://github.com/tsyecommercialdesigner-cloud/zhenzhen-nanobanana-mcp/actions/runs/39529835229) 成功；[独立安装及协议验收](docs/RELEASE-ACCEPTANCE.md)通过。Windows 是当前安装和验收平台；未声明 Linux/macOS 已验收。
+- 当前开发版默认安装到 `D:\MCP\zhenzhen-nanobanana-mcp`，仅调整盘符，目录层级不变。已发布 v0.2.0 的文件保持原样；使用其安装脚本时显式传入 `-InstallRoot 'D:\MCP'`，Host 模板中的路径按本页调整。日常启动不拉取最新 main。
 - Codex app-server、DSH CLI 的工具发现及免费调用已验证；GUI、自主选工具和各 Host 完整私人配置不在该结论内，见 [Host 验收](docs/HOST-VALIDATION.md)。
 
 ## 快速安装与配置
@@ -17,11 +17,11 @@
 
 ```powershell
 $ErrorActionPreference = 'Stop'
-$ProjectDir = 'C:\MCP\zhenzhen-nanobanana-mcp'
-$ExpectedCommit = '728172caf5794a374dda4c418779d34cd372155d'
+$ProjectDir = 'D:\MCP\zhenzhen-nanobanana-mcp'
+$ExpectedCommit = '66555d72742cf54b98bd3dc4c57a94d3a98d7818'
 if (Test-Path -LiteralPath $ProjectDir) { throw '目录已存在，请按手册更新，不能覆盖安装。' }
 New-Item -ItemType Directory -Path (Split-Path -Parent $ProjectDir) -Force | Out-Null
-git clone --branch main --single-branch 'https://github.com/tsyecommercialdesigner-cloud/zhenzhen-nanobanana-mcp.git' $ProjectDir
+git clone --branch v0.2.0 --single-branch 'https://github.com/tsyecommercialdesigner-cloud/zhenzhen-nanobanana-mcp.git' $ProjectDir
 if ($LASTEXITCODE -ne 0) { throw '仓库获取失败。' }
 git -C $ProjectDir checkout --detach $ExpectedCommit
 if ($LASTEXITCODE -ne 0) { throw '固定提交不存在，停止安装。' }
@@ -55,7 +55,7 @@ if ($LASTEXITCODE -ne 0) { throw '协议检查失败。' }
 smoke 使用隔离假配置，不调用绘图接口，也不证明真实密钥或上游业务可用。日常由 Host 使用下列入口启动，不安装、构建或升级依赖；手工运行 stdio 服务会等待协议输入：
 
 ```powershell
-uv --directory 'C:\MCP\zhenzhen-nanobanana-mcp' run --no-sync python -m zhenzhen_nanobanana_mcp
+uv --directory 'D:\MCP\zhenzhen-nanobanana-mcp' run --no-sync python -m zhenzhen_nanobanana_mcp
 ```
 
 ## 接入客户端
@@ -69,7 +69,7 @@ uv --directory 'C:\MCP\zhenzhen-nanobanana-mcp' run --no-sync python -m zhenzhen
 | Claude Code | [JSON](templates/claude-code.mcp.json.example) |
 | Cherry Studio | [JSON](.mcp.json.example) |
 
-模板使用 `C:\MCP\zhenzhen-nanobanana-mcp`；安装到其它位置时修改 `--directory` 的绝对路径。密钥由服务读取，默认不填入 Host 配置。
+模板使用 `D:\MCP\zhenzhen-nanobanana-mcp`；安装到其它位置时修改 `--directory` 的绝对路径。密钥由服务读取，默认不填入 Host 配置。
 
 ## 异步绘图工作流
 

@@ -24,3 +24,7 @@
 ## 2026-10-20后续用户修订
 
 CI验收只要求Windows，MCP公开6工具。远端先从main创建dev，再合入本地审查后的完整项目；README.md和LICENSE放弃本地版本，以main为准。Release CD先创建草稿，核对后另行授权人工正式公开。该修订取代首次审查中的Linux/11工具差额要求与直接公开流程；实际执行状态见tasks.md，六步标准见docs/DELIVERY-PLAN.md。
+
+## 2026-10-21默认安装盘符修订
+
+用户指定本项目默认安装目录改为D:\MCP\zhenzhen-nanobanana-mcp：仅变更盘符，仍是MCP父目录下的同名项目目录。安装脚本默认InstallRoot为D:\MCP，README/MANUAL及四Host共享模板同步；项目根目录仍按实际安装位置定位，不硬编码运行时根目录。历史验收路径保持原样，通用指南的C盘示例不作为本项目默认。已发布v0.2.0保持不变，旧脚本通过显式InstallRoot参数使用D盘；本轮仅提交合并开发分支，不新增收费调用、不发布版本。

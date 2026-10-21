@@ -5,7 +5,7 @@
       "command": "uv",
       "args": [
         "--directory",
-        "C:\\MCP\\zhenzhen-nanobanana-mcp",
+        "D:\\MCP\\zhenzhen-nanobanana-mcp",
         "run",
         "--no-sync",
         "python",
