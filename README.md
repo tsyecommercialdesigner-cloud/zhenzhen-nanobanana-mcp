@@ -1,114 +1,77 @@
 # zhenzhen-nanobanana-mcp
 
-用于家居日用百货电商绘图的本地 MCP Server，支持商品主图、详情页、家居场景图、营销海报及参考图编辑。通过本地 stdio 接入 Host，使用 t8star 图像服务；图像生成与编辑会产生上游费用。
+用于家居日用百货电商绘图的本地 MCP Server：商品主图、详情页、场景图、营销海报和参考图编辑。Agent 一次可登记 1–12 项后台任务，立即得到持久化状态，后续查询图片路径；默认并发 4，图片自动保存到本机。生成和编辑会产生供应商费用。
 
-批量任务先写入本地 SQLite 并立即返回，Agent 后续查询结果，无需用一次工具调用等待整批渲染。图片自动保存到本机，参考图可直接使用可读取的本机绝对路径或公开 HTTP/HTTPS 图片 URL，无需搬到 input 文件夹。
+参考图可直接使用本机可读图片绝对路径或公开 HTTP/HTTPS 图片直链，无需搬入 `input`。服务会检查图片内容、大小及网络地址；不自动上传店铺或保证平台审核通过。
 
-## 当前状态
+## 安装版本与环境
 
-- 当前正式版本：`0.2.1`；Python `3.12.14`，uv `0.12.9`，FastMCP `4.1.0`，MCP SDK `2.3.0`。
-- [v0.2.1](https://github.com/tsyecommercialdesigner-cloud/zhenzhen-nanobanana-mcp/releases/tag/v0.2.1) 已正式公开，提交 `09501092c369e2a314df757eece5fa8d7a38e64e`，对应 [Windows CI](https://github.com/tsyecommercialdesigner-cloud/zhenzhen-nanobanana-mcp/actions/runs/39534145510) 成功；[D 盘独立安装及协议验收](docs/RELEASE-0.2.1-ACCEPTANCE.md)通过。Windows 是当前安装和验收平台；未声明 Linux/macOS 已验收。
-- 默认安装到 `D:\MCP\zhenzhen-nanobanana-mcp`，安装脚本和四份 Host 模板均使用该路径。日常启动不拉取最新 main；已有其它路径安装按手册保留配置并更新，不自动搬迁。
-- Codex app-server、DSH CLI 的工具发现及免费调用已验证；GUI、自主选工具和各 Host 完整私人配置不在该结论内，见 [Host 验收](docs/HOST-VALIDATION.md)。
+成员使用已正式公开的 [v0.2.1](https://github.com/tsyecommercialdesigner-cloud/zhenzhen-nanobanana-mcp/releases/tag/v0.2.1)，对应提交 `09501092c369e2a314df757eece5fa8d7a38e64e` 和[成功的 Windows CI](https://github.com/tsyecommercialdesigner-cloud/zhenzhen-nanobanana-mcp/actions/runs/39534145510)。默认目录 `D:\MCP\zhenzhen-nanobanana-mcp`；当前开发分支及文档更新不自动改变成员安装或已发布附件。
+
+需要 Windows x64、Git、PowerShell 7、uv（已验证 `0.12.9`）。项目精确使用 Python `3.12.14`，由 uv 按锁定声明准备；FastMCP `4.1.0`、MCP SDK `2.3.0`。首次安装需访问 GitHub、Python 下载源和 PyPI；绘图及图片下载另需业务网络。Linux/macOS/WSL 尚未完成安装验收。
 
 ## 快速安装与配置
 
-需要 Git、PowerShell 7 和 uv 0.12.9；uv 根据项目版本文件安装/使用 Python 3.12.14。首次安装需访问 GitHub、Python 下载源和 PyPI。以下命令在 **PowerShell 7** 中执行，安装父目录需可写；已有目录请按[升级/迁移流程](MANUAL.md#5-启动排障)处理。
+在 **PowerShell 7** 执行以下首次安装步骤。只创建父目录，clone 自动创建项目目录；已有安装请按[升级与迁移](MANUAL.md#5-启动排障)处理。
 
 ```powershell
 $ErrorActionPreference = 'Stop'
 $ProjectDir = 'D:\MCP\zhenzhen-nanobanana-mcp'
 $ExpectedCommit = '09501092c369e2a314df757eece5fa8d7a38e64e'
-if (Test-Path -LiteralPath $ProjectDir) { throw '目录已存在，请按手册更新，不能覆盖安装。' }
+if (Test-Path -LiteralPath $ProjectDir) { throw '目录已存在，请按手册更新，不能覆盖。' }
 New-Item -ItemType Directory -Path (Split-Path -Parent $ProjectDir) -Force | Out-Null
 git clone --branch v0.2.1 --single-branch 'https://github.com/tsyecommercialdesigner-cloud/zhenzhen-nanobanana-mcp.git' $ProjectDir
 if ($LASTEXITCODE -ne 0) { throw '仓库获取失败。' }
-git -C $ProjectDir checkout --detach $ExpectedCommit
-if ($LASTEXITCODE -ne 0) { throw '固定提交不存在，停止安装。' }
 $ActualCommit = git -C $ProjectDir rev-parse HEAD
-if ($LASTEXITCODE -ne 0 -or $ActualCommit -cne $ExpectedCommit) { throw '提交核验失败。' }
+if ($LASTEXITCODE -ne 0 -or $ActualCommit -cne $ExpectedCommit) { throw '标签提交不匹配。' }
 uv --directory $ProjectDir sync --locked --no-dev
-if ($LASTEXITCODE -ne 0) { throw '锁定依赖安装失败。' }
-```
-
-在同一个 PowerShell 会话中创建并打开项目私有 `.env`，保留已有文件：
-
-```powershell
+if ($LASTEXITCODE -ne 0) { throw '运行依赖安装失败。' }
+pwsh -NoProfile -File (Join-Path $ProjectDir 'scripts\smoke-test.ps1')
+if ($LASTEXITCODE -ne 0) { throw '隔离协议检查失败。' }
 $EnvPath = Join-Path $ProjectDir '.env'
 if (!(Test-Path -LiteralPath $EnvPath)) {
   [IO.File]::Copy((Join-Path $ProjectDir '.env.example'), $EnvPath, $false)
 }
-notepad.exe $EnvPath
+Start-Process -FilePath 'notepad.exe' -ArgumentList ('"{0}"' -f $EnvPath) -ErrorAction Stop
 ```
 
-在编辑器中填写 `ZHENZHEN_NANOBANANA_API_KEY=` 的值，保存为 UTF-8。使用原始密钥，不加 `Bearer `；不要把真实值写入共享命令、Host 模板或 Git。
+在编辑器中填写 `ZHENZHEN_NANOBANANA_API_KEY=`，保存为 UTF-8；使用原始密钥，不加 `Bearer `，不写入共享命令或 Host 模板。仅当字段缺失时按 **项目 `.env` → 进程环境 → Windows 当前用户环境** 回退；空值、非法值、重复或解析错误会阻止启动。已有 `.env` 和业务数据在升级时保留。完整发布记录核验、权限和回滚步骤见[手册](MANUAL.md)。
 
-服务固定读取实际项目根目录 `.env`，逐字段优先级为 **项目 .env → 进程环境 → Windows 当前用户环境**，统一使用 `ZHENZHEN_NANOBANANA_API_KEY`，旧名称不再读取。只有缺失才回退；空值、非法值、重复字段或文件解析失败会阻止启动。详细配置、权限和升级保留规则见[手册](MANUAL.md#1-环境准备)。
-
-安装后先执行不收费的协议检查：
-
-```powershell
-pwsh -NoProfile -File (Join-Path $ProjectDir 'scripts\smoke-test.ps1')
-if ($LASTEXITCODE -ne 0) { throw '协议检查失败。' }
-```
-
-smoke 使用隔离假配置，不调用绘图接口，也不证明真实密钥或上游业务可用。日常由 Host 使用下列入口启动，不安装、构建或升级依赖；手工运行 stdio 服务会等待协议输入：
+协议检查使用隔离假配置，不产生绘图费用；通过后在所用 Host 合并服务配置。日常启动入口为：
 
 ```powershell
 uv --directory 'D:\MCP\zhenzhen-nanobanana-mcp' run --no-sync python -m zhenzhen_nanobanana_mcp
+if ($LASTEXITCODE -ne 0) { throw 'MCP 服务退出失败，请检查 stderr。' }
 ```
 
-## 接入客户端
+stdio 等待输入时没有普通输出属于正常状态。Host 负责启动子进程，无需同时手动常驻；启动不安装依赖或拉取代码。
 
-完整添加、保存、启用、工具发现和排障步骤见 [MANUAL 第 4 节](MANUAL.md#4-客户端配置)，不要覆盖 Host 中已有的其它服务。
+## 选择客户端
 
-| Host | 配置模板 |
+| 客户端 | 配置入口 |
 |---|---|
-| Codex | [TOML](templates/codex.config.toml.example) |
-| DSH / App | [profile YAML](templates/dsh.patch.yml.example) |
-| Claude Code | [JSON](templates/claude-code.mcp.json.example) |
-| Cherry Studio | [JSON](.mcp.json.example) |
+| Cherry Studio | [本地 JSON 模板](.mcp.json.example)，导入/填写后保存、启用并绑定助手 |
+| Codex | [TOML 模板](templates/codex.config.toml.example)，合并到实际 Codex 配置后重载服务 |
+| Claude Code | [项目 JSON 模板](templates/claude-code.mcp.json.example)，按所选项目作用域添加；Claude-3p 未作为已验证适配交付 |
+| 原生 DSH / DSH App / Multica | [同一 YAML 模板](templates/dsh.patch.yml.example)，分别合并到 web / desktop / multica 的独立 patch |
 
-模板使用 `D:\MCP\zhenzhen-nanobanana-mcp`；安装到其它位置时修改 `--directory` 的绝对路径。密钥由服务读取，默认不填入 Host 配置。
+完整的添加、备份、保存、启用、工具发现和权限步骤见[客户端配置](MANUAL.md#4-客户端配置)。DSH 章节按新规范提供三份 profile 的存在检查、唯一备份、打开命令与空列表/已有 patch 合并方式；不覆盖其他插件，不改共享 bundle。HTTP/代理配置不适用于本项目。
 
-## 异步绘图工作流
+## 使用流程
 
-公开 **6 个工具**，另提供 1 个 Prompt、1 个 Resource；详细参数和结构见[手册资源清单](MANUAL.md#7-资源清单)与[工具契约](specs/003-async-image-tasks/contracts/mcp.json)。
+1. 调用免费 `list_models` 核对配置，提供已核实的商品事实与参考图。
+2. 用免费 `plan_ecommerce_images` 规划并审阅提示词；出图前确认收费授权。
+3. 为每项提供稳定的 `(checkpointer, thread_id, task_id)`，一次 `submit_image_tasks` 登记任务。
+4. 通过 `get_image_tasks` 查询同一身份，成功后使用返回的图片绝对路径。
 
-| 工具 | 用途 |
-|---|---|
-| `list_models` | 免费查看模型、接口限制、并发和配置状态 |
-| `plan_ecommerce_images` | 免费生成待审阅的主图/详情页/场景/海报计划 |
-| `submit_image_tasks` | 一次登记 1–12 项后台生成/编辑任务，立即返回；后台会收费 |
-| `get_image_tasks` | 按原身份查询状态、结果和图片绝对路径，不重新提交 |
-| `cancel_image_tasks` | 取消任务；已发送任务不保证远端停止或退款 |
-| `get_batch_result` | 查询旧版 request_id 批次记录，不生成图片 |
+相同身份与相同参数复用记录；参数冲突整组拒绝新增。`queued/preparing/running` 只表示尚未完成；`failed/unknown`、超时或取消不保证未收费，不自动换编号重试。防重范围为同一实际输出目录，保留 SQLite 与图片，不删除账本绕过幂等。其余工具为 `cancel_image_tasks` 和旧批次只读 `get_batch_result`；共 6 Tools、1 Prompt、1 Resource，详见[资源与参数](MANUAL.md#7-资源清单)。
 
-先核实商品事实与计划，再为每项分配稳定的 `(checkpointer, thread_id, task_id)` 并提交。查询 `queued`、`preparing`、`running` 时继续查原身份；`succeeded` 后读取图片路径。相同身份和内容重放返回 `reused=true`，不同内容冲突拒绝，不能通过换ID盲目重试 `failed` 或 `unknown`。
-
-默认并发为 **4**，可配置为 1–10；同一输出目录内的进程共享限额，单批 10 项不等于同时启动 10 个上游请求。默认输出为项目 `outputs/`，可通过 `NANOBANANA_OUTPUT_DIR` 配置绝对路径；所有共享账本的实例需保持相同并发配置。
-
-## 模型与编辑
-
-默认模型是 `gemini-nano-banana-2.1`；各模型的接口限制不同：
-
-| 模型系列 | 可用格式 | DALL·E 端点 |
-|---|---|---|
-| `gemini-3.1-flash-lite-image` | Gemini、OpenAI Chat | 不支持 |
-| `gemini-nano-banana-2.1` | Gemini、OpenAI Chat、DALL·E | Generations；参考图也走此端点，不走 Edits |
-| `nano-banana-pro` | DALL·E | Generations、Edits |
-
-后两系列各保留 `-2k`、`-4k` 变体。显式分辨率长边 ≤1024 使用基础版，1024＜长边≤2048 使用 2k，＞2048 使用 4k；Flash-lite 不做该映射。这是模型路由，不保证上游精确输出像素。
-
-表中为当前接口契约；本轮真实收费验证覆盖基础 gemini-nano-banana-2.1 的 Generations 和基础 nano-banana-pro 的 Edits，其余模型、格式、参考图编码与分辨率变体未因此视为实测通过。
-
-输入图片可直接使用本机可读取的绝对路径或公开 HTTP/HTTPS URL；服务仍校验格式、大小、像素、下载地址和路径安全边界。无法把“能读取参考图”当作商品真实性证明；只使用已确认的商品信息。
+默认模型 `gemini-nano-banana-2.1`，自动使用 DALL·E Generations；`nano-banana-pro` 仅 DALL·E，支持 Generations/Edits；Flash-lite 仅 Gemini/Chat。两个 banana 家族支持基础版及 `-2k/-4k`。显式分辨率长边 ≤1024 用基础版、≤2048 用 2k、>2048 用 4k；Flash-lite 不路由。此规则只选择模型，不保证精确输出像素，完整接口矩阵见手册。
 
 ## 验证与维护
 
-- 单张主图、3 项并发生成和一次本机参考图编辑及原身份重放已实测，见[单张验收](docs/SINGLE-IMAGE-ACCEPTANCE.md)、[小批量与编辑验收](docs/BATCH-EDIT-ACCEPTANCE.md)。
-- [10 项详情页实测](docs/TEN-IMAGE-ACCEPTANCE.md)已通过：单次异步登记、并发峰值 4、结果查询和 10 图落盘，整批原身份重放未新增上游请求。默认模型未请求精确像素，上游返回格式/尺寸可能不同。完整状态见[交付任务](specs/002-github-distribution/tasks.md)。
-- MCP 进程退出期间不执行任务。重启只恢复明确未发送的任务；可能已经发送的中断任务标记 `unknown`，不自动重发。防重仅在同一实际输出目录的账本内成立，不能承诺供应商网络侧 exactly-once。
-- 维护者使用 `uv sync --locked`、`uv run --no-sync python scripts/check.py`，经 PR、必需 Windows CI 和审查合入；发布另行授权，先生成草稿，核对后才公开。更新保留成员 `.env`、权限与图片/SQLite，不清空安装目录。
+[发布安装验收](docs/RELEASE-0.2.1-ACCEPTANCE.md)、[Host 免费验收](docs/HOST-VALIDATION.md)、[本机 D 盘迁移验收](docs/LOCAL-D-DRIVE-MIGRATION-ACCEPTANCE.md)及[10 项业务验收](docs/TEN-IMAGE-ACCEPTANCE.md)分别记录安装、协议、Host 与真实业务证据。当前 Codex 与 DSH CLI 隔离 profile 已有工具调用证据；DSH 三种完整私人 profile、Multica 集成、各 GUI、Bash/Zsh、全部模型/变体和真实故障恢复仍有未验证范围，不因更新文档视为通过。
 
-使用与更新：[MANUAL](MANUAL.md) · 当前计划：[DELIVERY-PLAN](docs/DELIVERY-PLAN.md) · 工程规范：[ENGINEERING-GUIDE](docs/ENGINEERING-GUIDE.md) · 许可证：[MIT](LICENSE)
+维护者遵循分支 → PR → Windows CI → 评审 → 合并；发布单独授权，先创建草稿，核对后才公开。开发安装使用 `uv sync --locked`、检查使用 `uv run --no-sync python scripts/check.py`；成员只需锁定运行依赖。任务状态见[交付任务](specs/002-github-distribution/tasks.md)。
+
+[完整手册](MANUAL.md) · [交付计划](docs/DELIVERY-PLAN.md) · [MIT 许可证](LICENSE)

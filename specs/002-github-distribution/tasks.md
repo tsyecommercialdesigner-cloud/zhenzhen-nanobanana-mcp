@@ -2,6 +2,8 @@
 
 本文件是本功能任务状态唯一来源，无任务数据库。
 
+- [x] DOC01 2026-10-21按用户本地修订的MANUAL-WRITING-GUIDE重写README与交付手册：保持十节结构、正式v0.2.1/0950109/D盘安装及既有四模板；README收敛为快速入门。DSH章节覆盖web/desktop/multica，YAML前先检查全部文件、唯一相邻备份再打开，说明空列表/已有patch/同实例合并、DSH_HOME、宿主重启和权限边界；补充Claude双配置位置打开命令，Claude-3p仍非已验证适配。模板/JSON/TOML/YAML、相对链接、13段PowerShell语法、临时假profile的6份独立备份/原文不变及缺失profile无部分副作用检查通过；重写阶段未运行真实Host配置修改、收费调用、提交推送或发布；后续用户已授权连同修订指南提交dev、PR、Windows CI与审查后合并并复验合入CI，实际结果留在对应PR，不预填未来通过。用户已修改的指南按授权纳入本轮文档提交；三种完整DSH profile/Multica、GUI和Bash/Zsh运行未据此标为实测通过。
+
 - [x] M01 2026-10-21现用服务从C盘0.1.0迁移至D:\MCP\zhenzhen-nanobanana-mcp的GitHub发布版v0.2.1（0950109）；.env仅升级密钥字段名且保留值/访问规则，保留10批次11图及防重指纹，映射新副本结果路径。Codex配置切换后用户重启，当前会话发现6工具、免费查询全部历史批次及逐文件核对通过；33个原始关键文件与备份未变。见docs/LOCAL-D-DRIVE-MIGRATION-ACCEPTANCE.md。
 - [x] M02 2026-10-21追加授权的一次真实收费生成通过当前Codex会话完成：默认gemini-nano-banana-2.1、DALL·E Generations、单张白色马克杯，queued→running→succeeded，约25.39秒，PNG2048×2048，落盘D盘且解码/hash/视觉检查通过。只提交一次任务，不追加批量/编辑/重放或发布；未核对账单/全部网络POST，真实故障恢复仍未实测。
 - [x] M03 本轮验收文档先以b409894提交推送dev，Windows CI39544644902通过后，按授权精确删除C盘旧安装及20261021-a3dba663迁移备份；旧虚拟环境权限不足经限定目录处理及UAC提权清理解决，两个目标确认不存在。删除后当前MCP查询10个旧批次及新任务全部成功，11张历史图片及新图hash/解码、两数据库完整性检查通过，D盘.env保留。其他验收目录/父目录未清理；实际清理结果补记提交，仅创建PR，不合并或发布。
