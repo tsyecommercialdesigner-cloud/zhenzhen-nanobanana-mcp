@@ -22,6 +22,18 @@ def script(name):
 
 
 class DistributionTests(unittest.TestCase):
+    def test_release_requests_canonical_repository_and_nested_urls(self):
+        module = script("release")
+        base = f"https://api.github.com/repos/{module.REPOSITORY}"
+        with patch.dict(module.os.environ, {"GH_TOKEN": "fake-test-token"}):
+            for path in ("", "environments/release", "actions/workflows/ci.yml/runs?per_page=100"):
+                with patch.object(module, "urlopen") as open_request:
+                    open_request.return_value.__enter__.return_value = io.BytesIO(b"{}")
+                    self.assertEqual(module.api(path), {})
+                    request = open_request.call_args.args[0]
+                    self.assertEqual(request.full_url, base + (f"/{path}" if path else ""))
+                    self.assertEqual(open_request.call_args.kwargs["timeout"], 30)
+
     def test_ci_security_and_release_boundary(self):
         for name in ("ci", "release"):
             data = yaml.load(

@@ -28,6 +28,8 @@
 
 如果tag已创建而草稿创建失败，停止并保留日志/产物，不重指tag。是否恢复同一产物的草稿或发布新版本需明确决定。不得为重跑而覆盖已发布tag/Release，人工最终公开也不得替换已核对资产。
 
+2026-10-21首次受控草稿运行 [39529304202](https://github.com/tsyecommercialdesigner-cloud/zhenzhen-nanobanana-mcp/actions/runs/39529304202) 在只读资格检查阶段失败：仓库根 REST URL 尾随斜杠导致 HTTP 404，publish 被跳过，没有创建标签或草稿。修复根 URL 构造，并增加实际 Request URL 的回归检查；后续仍须通过 dev→PR→Windows CI→合并及同 SHA main CI，再重新发起草稿流程，不跳过资格检查。
+
 ## 回滚与旧安装
 
 按MANUAL第5节保留.env/ACL、图片、tasks.sqlite3与batches.sqlite3，再切回已记录的SHA、安装该锁及复验协议。0.1不处理新任务队列，保留数据，勿用reset --hard、clean -fdx或删账本绕过问题。
