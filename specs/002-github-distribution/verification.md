@@ -58,3 +58,9 @@ main仍为ce7ce74a357782fcda820174c60a9c41090d7fa9，README/LICENSE与main一致
 首次完整检查在依赖审计被9条新公告阻断（Pillow12.3.0八条、certifi2026.7.22一条），未绕过门禁。核对[Pillow13发行说明](https://pillow.readthedocs.io/en/stable/releasenotes/13.0.0.html)与上游修复版本后，仅定向更新Pillow13.0.0、certifi2026.10.19及锁文件；其余依赖保持。再次运行`scripts/check.py`全部11阶段通过，69项测试、覆盖率、文档/契约、零告警严格依赖审计、构建、无收费stdio及独立空缓存安装均成功；假`.env`字节及ACL保留，业务调用0。
 
 用户已授权独立目录安装main、按Codex→DSH验证6工具与免费调用；该部分在后续执行，不用协议探针替代真实Host。PR及最终main的CI必须另读GitHub结果；未触发收费调用或发布。
+
+### 同日后续：合入及Host免费验收完成
+
+密钥修正PR #2受审c822889合入main的91af94c38c64d46bdcc072259112a26037faeb30，PR CI39524384546与main CI39524783398成功。从GitHub独立clone该main并锁定安装无开发依赖，先通过Codex0.153.0实际app-server，再通过DSH0.2.0-rc.2实际CLI的隔离profile/工具桥；两者发现6工具，免费模型清单、6项详情页计划、空任务查询及不存在历史批次的失败语义均通过。没有提交图像任务、输出图片、标签或Release。实际Windows当前用户新字段回退也通过，凭据值未输出或落盘。
+
+完整范围、命令入口、证据位置和未覆盖项见[Host验收记录](../../docs/HOST-VALIDATION.md)。这不是GUI点击、Agent自主选工具、现用完整profile或收费上游验收。
