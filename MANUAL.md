@@ -40,17 +40,17 @@
 
 ## 2. 项目初始化
 
-**正式发布状态（2026-10-21）**：[v0.2.0](https://github.com/tsyecommercialdesigner-cloud/zhenzhen-nanobanana-mcp/releases/tag/v0.2.0)已正式公开，标签提交`66555d72742cf54b98bd3dc4c57a94d3a98d7818`通过[Windows CI39529835229](https://github.com/tsyecommercialdesigner-cloud/zhenzhen-nanobanana-mcp/actions/runs/39529835229)，从GitHub发布标签的独立安装及无收费协议验收已通过，见[发布验收](docs/RELEASE-ACCEPTANCE.md)。不要把远端初始提交`ce7ce74a357782fcda820174c60a9c41090d7fa9`当作MCP版本。
+**正式发布状态（2026-10-21）**：[v0.2.1](https://github.com/tsyecommercialdesigner-cloud/zhenzhen-nanobanana-mcp/releases/tag/v0.2.1)已正式公开，标签提交`09501092c369e2a314df757eece5fa8d7a38e64e`通过[Windows CI39534145510](https://github.com/tsyecommercialdesigner-cloud/zhenzhen-nanobanana-mcp/actions/runs/39534145510)，从GitHub发布标签的D盘独立安装及无收费协议验收已通过，见[发布验收](docs/RELEASE-0.2.1-ACCEPTANCE.md)。不要把远端初始提交`ce7ce74a357782fcda820174c60a9c41090d7fa9`当作MCP版本。
 
-当前开发候选版本为0.2.1，纳入D盘默认路径及最新验收文档；本轮仅获准创建Release草稿，不能作为正式成员发行版安装。公开前仍按下面流程获取已正式公开的v0.2.0，旧版脚本的路径例外见下段；[0.2.1候选说明](docs/RELEASE-0.2.1.md)记录范围与验证边界。未来正式公开须另获授权，不修改既有v0.2.0。
+当前成员安装版本为v0.2.1，纳入D盘默认路径及最新验收文档。下面流程固定安装该正式标签并验证发布记录/CI；[0.2.1准备阶段说明](docs/RELEASE-0.2.1.md)保留历史草稿范围，正式公开及安装结论以[发布验收](docs/RELEASE-0.2.1-ACCEPTANCE.md)为准。已发布版本的标签、说明及附件不因本次手册更新而改变。
 
-本项目按用户约定将默认安装目录改为`D:\MCP\zhenzhen-nanobanana-mcp`，与本次同步的手册指南一致，仅变更盘符；不搬迁已有安装或修改现用Host配置。下面流程和[README快速安装](README.md#快速安装与配置)均使用D盘。已发布v0.2.0文件、标签及附件不变，旧版安装脚本仍须显式传入`-InstallRoot 'D:\MCP'`，其Host模板也须按第4节调整路径。下面的发布验证在没有正式Release时仍明确停止，不回退main；升级前保留`.env`与私有图片/账本。
+默认安装目录为`D:\MCP\zhenzhen-nanobanana-mcp`，安装器默认父目录D:\MCP，四Host模板与下面流程一致；已有其它位置的安装不会自动搬迁。下面流程和[README快速安装](README.md#快速安装与配置)均使用D盘。仍在使用v0.2.0旧脚本的成员可显式传入`-InstallRoot 'D:\MCP'`并调整Host路径；旧发行物保持原样。发布验证在没有正式Release时明确停止，不回退main；升级前保留`.env`与私有图片/账本。
 
 仓库：https://github.com/tsyecommercialdesigner-cloud/zhenzhen-nanobanana-mcp.git 。正式版本与验收记录从 [Releases](https://github.com/tsyecommercialdesigner-cloud/zhenzhen-nanobanana-mcp/releases) 取得；[CI](https://github.com/tsyecommercialdesigner-cloud/zhenzhen-nanobanana-mcp/actions/workflows/ci.yml) 与发布记录必须对应同一完整SHA。仓库公开，HTTPS clone无需密钥；不要把GitHub令牌放入URL。以后改为私有时使用自己的SSH或Git凭据管理器授权，业务API密钥不能用于Git认证。
 
 ### 首次安装：取正式标签并核验完整提交
 
-需要Git、PowerShell7、uv0.12.9，uv按`.python-version`使用Python3.12.14。只创建安装父目录，clone自动创建项目目录；不能覆盖已有安装。以下PowerShell流程使用真实Release返回的tag和完整SHA，不从包版本推测标签：
+需要Git、PowerShell7、uv0.12.9，uv按`.python-version`使用Python3.12.14。只创建安装父目录，clone自动创建项目目录；不能覆盖已有安装。以下PowerShell流程指定已正式发布的v0.2.1，核对Release返回的标签、验收记录及完整SHA，不从包版本推测发布状态：
 
 ```powershell
 $ErrorActionPreference = 'Stop'
@@ -58,11 +58,11 @@ $Repository = 'tsyecommercialdesigner-cloud/zhenzhen-nanobanana-mcp'
 $ApiRoot = "https://api.github.com/repos/$Repository"
 $RepositoryUrl = "https://github.com/$Repository.git"
 $ProjectDir = 'D:\MCP\zhenzhen-nanobanana-mcp'
+$ReleaseTag = 'v0.2.1'
 if (Test-Path -LiteralPath $ProjectDir) { throw '目录已存在，改用第5节升级/旧安装迁移流程。' }
-try { $Release = Invoke-RestMethod "$ApiRoot/releases/latest" }
+try { $Release = Invoke-RestMethod "$ApiRoot/releases/tags/$ReleaseTag" }
 catch { throw '尚无正式Release或GitHub访问失败；停止安装，不回退main。' }
-$ReleaseTag = $Release.tag_name
-if ($Release.draft -or $Release.prerelease -or $ReleaseTag -cnotmatch '^v[0-9]+\.[0-9]+\.[0-9]+$') { throw '不是可安装的正式版本。' }
+if ($Release.draft -or $Release.prerelease -or $Release.tag_name -cne $ReleaseTag) { throw '不是指定的正式版本。' }
 $Assets = @($Release.assets | Where-Object { $_.name -eq 'release-eligibility.json' })
 if ($Assets.Count -ne 1) { throw '缺少发布验收记录。' }
 $EvidenceBody = (Invoke-WebRequest $Assets[0].browser_download_url).Content
@@ -92,7 +92,7 @@ if ($LASTEXITCODE -ne 0) { throw '协议检查失败。' }
 
 clone标签后detached HEAD是固定版本的正常状态。不要重新`uv init`、删除锁或使用全局pip。无Node构建或extra；Python安装会构建本项目所需的editable元数据，日常启动不执行安装/构建。首次初始化需联网访问GitHub、Python下载源和锁定包源；失败停止，不自动升级。
 
-维护者已有完整开发checkout时，也可运行 `pwsh -NoProfile -File './scripts/install-from-github.ps1' -InstallRoot 'D:\MCP'`，其执行同等发布验证、clone、无开发依赖安装及协议检查；`-Tag`选择Releases中的实际标签，`-InstallRoot`只指定安装父目录，新版省略时也为D盘。`-VerifyOnly`只返回经过API核验的Tag/Commit/CI，不安装。不要从未知来源复制或未审阅即执行远程脚本。普通成员可直接使用上面的完整流程。
+维护者已有完整checkout时，也可运行 `pwsh -NoProfile -File './scripts/install-from-github.ps1' -Tag 'v0.2.1' -InstallRoot 'D:\MCP'`，其执行同等发布验证、clone、无开发依赖安装及协议检查；`-InstallRoot`只指定安装父目录，v0.2.1省略时也为D盘。`-VerifyOnly`只返回经过API核验的Tag/Commit/CI，不安装。不要从未知来源复制或未审阅即执行远程脚本。普通成员可直接使用上面的完整流程。
 
 首次配置，只复制并打开空值模板，不把密钥写入共享命令/历史；已有文件保留：
 
@@ -386,7 +386,7 @@ uv --directory 'D:\MCP\zhenzhen-nanobanana-mcp' run --no-sync python -m zhenzhen
 
 ### 已有Git安装的升级与回滚
 
-先在 Host 停用该 MCP 并等待当前业务结束，记录当前 SHA；收费任务失败/中断先按原三元组查询，旧批次按 request_id 查询，不因升级重发。停止所有使用同一输出目录的服务后备份，再执行版本切换。下方 Read-Host 输入从 Releases 取得的真实目标标签；脚本检查发布记录/CI，并对本地改动或冲突停止。保留 .env、NTFS ACL、outputs 及 SQLite 账本；备份放私有目录，不进入 Git。锁定安装不会覆盖 .env。
+先在 Host 停用该 MCP 并等待当前业务结束，记录当前 SHA；收费任务失败/中断先按原三元组查询，旧批次按 request_id 查询，不因升级重发。停止所有使用同一输出目录的服务后备份，再执行版本切换。下方以正式标签v0.2.1为目标；脚本检查发布记录/CI，并对本地改动或冲突停止。保留 .env、NTFS ACL、outputs 及 SQLite 账本；备份放私有目录，不进入 Git。锁定安装不会覆盖 .env。
 
 ```powershell
 $ErrorActionPreference = 'Stop'
@@ -399,7 +399,7 @@ if ($LASTEXITCODE -ne 0 -or $Changes) { throw 'Git工作区有改动或无法读
 $PreviousCommit = git -C $ProjectDir rev-parse HEAD
 if ($LASTEXITCODE -ne 0) { throw '无法记录更新前版本。' }
 Write-Host "回滚用提交：$PreviousCommit"
-$TargetTag = Read-Host '输入Releases中要安装的正式标签'
+$TargetTag = 'v0.2.1'
 $Evidence = & (Join-Path $ProjectDir 'scripts\install-from-github.ps1') -Tag $TargetTag -VerifyOnly
 $ExpectedCommit = $Evidence.Commit
 git -C $ProjectDir fetch origin tag $TargetTag
@@ -436,7 +436,7 @@ if ($LASTEXITCODE -ne 0) { throw '回滚协议复验失败。' }
 | 来源/内容 | 用途 |
 |---|---|
 | [GitHub仓库](https://github.com/tsyecommercialdesigner-cloud/zhenzhen-nanobanana-mcp) | 默认成员来源；`src/`、元数据/锁/运行时、LICENSE、安全模板、scripts、测试、规范及手册随clone取得 |
-| [Releases](https://github.com/tsyecommercialdesigner-cloud/zhenzhen-nanobanana-mcp/releases) | 正式tag、完整SHA、CI链接、安装验收记录、sdist/wheel及SHA256SUMS；迁移时尚无正式版 |
+| [Releases](https://github.com/tsyecommercialdesigner-cloud/zhenzhen-nanobanana-mcp/releases) | 当前正式版v0.2.1；包含正式tag、完整SHA、CI链接、安装验收记录、sdist/wheel及SHA256SUMS |
 | `.github/workflows/ci.yml` | dev push、PR及默认分支push的Windows quality检查，Python3.12.14、uv0.12.9 |
 | `.github/workflows/release.yml` | 默认分支手动发起，要求同SHA CI成功并重新验收，通过release环境批准后发tag及草稿Release，核对并另获授权后人工公开；不部署远程服务 |
 | `scripts/check.py` | 本地与CI统一格式、lint、类型、测试/覆盖率、文档、契约、秘密/依赖、构建、协议及独立运行安装检查 |
@@ -444,7 +444,7 @@ if ($LASTEXITCODE -ne 0) { throw '回滚协议复验失败。' }
 | `specs/002-github-distribution/` | 本次迁移的需求、方案、任务及验证边界；门禁设置说明见`docs/RELEASE.md` |
 | 本机生成内容 | `.venv`、缓存、dist、test-reports、私有.env和UUID批次图片/账本不进入Git；outputs正式模板仍可跟踪 |
 
-源码安装不要求成员下载wheel或ZIP。开发人员在dev分支提交/推送候选代码后，按授权创建dev→main PR；GitHub分支保护需必需`quality`与评审，release环境需审批及标签保护。工作流文件已准备不等于远端门禁已启用；当前dev上传范围已获授权，门禁、PR、实际CI及首发按阶段落实，不编造运行成功。六步计划见 docs/DELIVERY-PLAN.md。
+源码安装不要求成员下载wheel或ZIP。开发人员在dev分支提交/推送候选代码后，按授权创建dev→main PR；GitHub分支保护要求必需`quality`与评审，release环境要求审批及标签保护。门禁及受控发布流程见[发布说明](docs/RELEASE.md)，v0.2.1的实际发布/安装证据见[验收报告](docs/RELEASE-0.2.1-ACCEPTANCE.md)。后续发布仍需独立授权，本次手册同步不触发发布。六步计划见 docs/DELIVERY-PLAN.md。
 
 ### 可选ZIP
 
