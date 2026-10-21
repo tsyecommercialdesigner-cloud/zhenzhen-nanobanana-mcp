@@ -1,0 +1,9 @@
+# 技术方案
+
+复用TaskQueue.submit/get及生命周期worker，不直接调用Provider，不改变SQLite表结构、指纹或依赖。新增TaskWaitResult继承TaskPage，仅增加wait_timed_out；原查询输出不变。
+
+TaskQueue.wait用单调时钟和异步sleep定期查询共享账本，按明确task_ids读取完整结果；不await/cancel worker。generate_images先提交，再等待并保留初次reused标记；wait_image_tasks只读取。两入口共用等待逻辑；超时及终态失败通过ToolResult保留结构化数据和isError。
+
+严格校验等待参数在提交前完成；读等待不允许空集合或重复编号。不把MCP请求取消映射为队列取消，显式取消仍由原工具执行。已有8工具中6工具兼容，Host时限须大于本地等待时限并预留传输开销。
+
+契约仍通过既有export-contracts写入003/contracts/mcp.json作为当前注册快照，004规范解释新增能力；旧历史验收数量不回写。本地替身覆盖gate等待、跨入口/跨实例防重、等待超时/取消、失败/unknown/取消、原子冲突和两协议真实stdio。安装、Host和收费验证分开报告。

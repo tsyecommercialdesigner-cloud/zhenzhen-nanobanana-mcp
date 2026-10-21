@@ -20,6 +20,8 @@ from .models import (
     ImageTasks,
     TaskIds,
     TaskPage,
+    TaskWaitResult,
+    WaitTimeout,
     ScopeId,
     FORMAT_SUPPORT,
     base_model,
@@ -48,7 +50,8 @@ def task_response(result: TaskPage) -> ToolResult:
     return ToolResult(
         content=[types.TextContent(type="text", text=json.dumps(data, ensure_ascii=False))],
         structured_content=data,
-        is_error=any(task.status in ("failed", "unknown", "cancelled") for task in result.tasks),
+        is_error=(isinstance(result, TaskWaitResult) and result.wait_timed_out)
+        or any(task.status in ("failed", "unknown", "cancelled") for task in result.tasks),
     )
 
 
@@ -80,7 +83,9 @@ def create_server(
             "参考图直接使用本机可读取的图片绝对路径或公开HTTP/HTTPS图片URL；"
             "没有文件目录白名单，无需复制到input，也可直接编辑已生成的图片。"
             "submit_image_tasks立即返回并在后台收费出图，最多12项，默认并发4。"
-            "按(checkpointer,thread_id,task_id)唯一幂等；用get_image_tasks查询，不同步等待。"
+            "需要同步出图时用generate_images，等待本组完成并落盘；已有任务用wait_image_tasks等待。"
+            "所有入口按(checkpointer,thread_id,task_id)共享幂等；get_image_tasks立即查询。"
+            "等待超时/取消仅结束本次等待，不取消后台任务；用原身份查询，禁止自动换编号重提。"
             "failed/unknown/取消后先查询，禁止自动更换编号重试。"
         ),
     )
@@ -174,6 +179,66 @@ def create_server(
             raise ToolError(str(exc)) from exc
 
     @mcp.tool(
+        output_schema=TaskWaitResult.model_json_schema(),
+        annotations={
+            "readOnlyHint": False,
+            "destructiveHint": False,
+            "idempotentHint": True,
+            "openWorldHint": True,
+        },
+    )
+    async def generate_images(
+        checkpointer: ScopeId,
+        thread_id: ScopeId,
+        tasks: ImageTasks,
+        wait_timeout_seconds: WaitTimeout = 600,
+    ) -> ToolResult:
+        """同步生成/编辑1–12项（会收费）：等待本组全部终态且成功图片落盘后返回。
+
+        任务参数与submit_image_tasks相同，支持同样的模型、比例和本机/URL参考图。
+        与异步入口共用三元组、防重、队列和并发限额；相同任务不重复提交。
+        wait_timeout_seconds默认600，严格整数1–1200，包含排队时间。
+        全部成功才isError=false；失败保留所有结果。等待到期返回isError=true、
+        wait_timed_out=true及当前状态，不取消后台任务。Host超时/取消也不保证停止上游。
+        请保留原三元组，用get_image_tasks查询或wait_image_tasks继续等，不换编号重交。
+        """
+        try:
+            submitted = await queue.submit(checkpointer, thread_id, tasks)
+            result = await queue.wait(
+                checkpointer, thread_id, [task.task_id for task in tasks], wait_timeout_seconds
+            )
+            reused = {task.task_id: task.reused for task in submitted.tasks}
+            for task in result.tasks:
+                task.reused = reused[task.task_id]
+            return task_response(result)
+        except BusinessError as exc:
+            raise ToolError(str(exc)) from exc
+
+    @mcp.tool(
+        output_schema=TaskWaitResult.model_json_schema(),
+        annotations={"readOnlyHint": True, "idempotentHint": True, "openWorldHint": False},
+    )
+    async def wait_image_tasks(
+        checkpointer: ScopeId,
+        thread_id: ScopeId,
+        task_ids: TaskIds,
+        wait_timeout_seconds: WaitTimeout = 600,
+    ) -> ToolResult:
+        """等待1–100个已有任务，不提交、不重新出图；所有指定任务终态后返回结果。
+
+        task_ids必填且不重复；不存在或错误命名空间报错。
+        等待时限默认600秒，严格整数1–1200；到期isError=true、wait_timed_out=true，
+        保留当前状态和已完成图片，后台继续。客户端取消只停止本次等待。
+        终态failed/unknown/cancelled是isError；查询get_image_tasks不等待。
+        """
+        try:
+            return task_response(
+                await queue.wait(checkpointer, thread_id, task_ids, wait_timeout_seconds)
+            )
+        except BusinessError as exc:
+            raise ToolError(str(exc)) from exc
+
+    @mcp.tool(
         output_schema=TaskPage.model_json_schema(),
         annotations={"readOnlyHint": True, "idempotentHint": True, "openWorldHint": False},
     )
@@ -235,9 +300,18 @@ def create_server(
                 "models": list(MODELS),
                 "api_formats": ["dalle", "chat", "gemini"],
                 "capabilities": {model: FORMAT_SUPPORT[base_model(model)] for model in MODELS},
-                "operations": ["submit", "query", "cancel", "legacy_batch_query"],
+                "operations": [
+                    "submit",
+                    "generate_sync",
+                    "wait",
+                    "query",
+                    "cancel",
+                    "legacy_batch_query",
+                ],
                 "identity": ["checkpointer", "thread_id", "task_id"],
                 "async_tasks": True,
+                "sync_generation": True,
+                "max_wait_timeout_seconds": 1200,
                 "transport": "stdio",
                 "upstream_verified": False,
                 "max_batch_items": 12,
@@ -251,8 +325,9 @@ def create_server(
         return (
             f"为商品 {product_name} 制作电商图片。先确认平台、真实卖点、材质、尺寸、"
             "参考图路径和图片中文案；调用 plan_ecommerce_images 审阅主图或详情计划。"
-            "实际出图使用submit_image_tasks，给每项稳定task_id及同一checkpointer/thread_id；"
-            "稍后get_image_tasks查询，不等待整批完成。不得捏造产品事实。"
+            "实际出图可用generate_images同步等待落盘，或submit_image_tasks异步提交后查询；"
+            "给每项稳定task_id及同一checkpointer/thread_id；已有任务用wait_image_tasks等待或"
+            "get_image_tasks查询。等待超时勿换编号重提。不得捏造产品事实。"
         )
 
     return mcp

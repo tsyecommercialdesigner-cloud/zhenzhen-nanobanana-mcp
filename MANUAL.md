@@ -2,6 +2,8 @@
 
 本手册面向在自己机器上安装服务的成员。完成安装、填写私有配置、协议检查后，在所用客户端中启用 MCP；日常由客户端管理 stdio 子进程。简要入口见 [README](README.md)。
 
+开发工作区现增加同步 `generate_images` 和只读等待 `wait_image_tasks`，共8工具；下方正式标签v0.2.1安装仍是6工具异步版。新能力尚未发布或安装到D盘，按实际安装版本区分工具发现。
+
 ## 1. 环境准备
 
 ### 安装方式与版本
@@ -101,7 +103,7 @@ if ($LASTEXITCODE -ne 0) { throw 'MCP 协议检查失败，请查看 stderr。' 
 
 脚本使用该安装的 `.venv`，在临时目录准备无真实权限的假凭据，从无关 cwd 启动真实 stdio 子进程；不读取成员 `.env`，不提交有效绘图请求。每请求/启动限时 30 秒，成功返回 JSON `status: passed`、退出 0；失败非零并在 stderr 提供诊断。测试空密钥实例预期退出 2，stdout 无额外输出。
 
-覆盖两种已声明协议、6 Tools/1 Prompt/1 Resource、免费计划/查询、输入错误及配置失败。协议成功不等于当前 Host 已加载真实配置，更不证明真实绘图或所有模型可用。配置客户端后，在该 Host 中调用 `list_models`，核对模型、密钥状态、输出目录，再做免费计划/历史查询；没有出图授权时停在这里。
+覆盖两种已声明协议、开发版8 Tools/1 Prompt/1 Resource（正式v0.2.1为6 Tools）、免费计划/查询、输入错误及配置失败。协议成功不等于当前 Host 已加载真实配置，更不证明真实绘图或所有模型可用。配置客户端后，在该 Host 中调用 `list_models`，核对模型、密钥状态、输出目录，再做免费计划/历史查询；没有出图授权时停在这里。
 
 | 证据类别 | 已有结果与边界 |
 |---|---|
@@ -348,7 +350,7 @@ foreach ($PatchFile in $PatchFiles) {
 ```
 <!-- end-template -->
 
-保存后分别在原生 DSH、App、Multica 中按实际版本重新加载所选 profile 或重启对应 DSH 运行实例；不凭空指定尚未核实的 GUI 按钮。检查补丁加载日志、6 个工具发现，以及工具权限预设：先允许免费计划/查询，收费提交权限由使用者决定。App 或 Multica 可能由宿主管理运行时，不假定全局 `dsh.exe` 与其内置运行时版本相同。
+保存后分别在原生 DSH、App、Multica 中按实际版本重新加载所选 profile 或重启对应 DSH 运行实例；不凭空指定尚未核实的 GUI 按钮。检查补丁加载日志、对应版本的工具发现（正式版6个、开发版8个），以及工具权限预设：先允许免费计划/查询，收费提交权限由使用者决定。App 或 Multica 可能由宿主管理运行时，不假定全局 `dsh.exe` 与其内置运行时版本相同。
 
 已有证据只覆盖实际 DSH CLI 的隔离 profile 工具桥接；三种完整 profile、Multica、GUI 与 Prompt/Resource 桥接均未在本轮实测。工具注册/发现不代表已完成绘图业务验证。
 
@@ -451,12 +453,14 @@ if ($LASTEXITCODE -ne 0) { throw '回滚协议复验失败。' }
 
 ## 7. 资源清单
 
-实际发现：6 Tools、1 Prompt、1 Resource，无资源模板。JSON schema 从注册信息导出到 `specs/003-async-image-tasks/contracts/mcp.json`。0.2.0 用异步工具替代原 `generate_images`，升级后让 Host 重新发现工具；历史结果查询保留。
+开发工作区实际发现：8 Tools、1 Prompt、1 Resource，无资源模板；已发布v0.2.1仍为6工具。JSON schema 从注册信息导出到 `specs/003-async-image-tasks/contracts/mcp.json`。0.2.0曾移除旧同步入口；本轮新增的generate_images采用三元组任务契约，与旧版request_id签名不同。同步/异步共用持久队列，历史批次查询保留；正式交付安装后须让Host重新发现工具。
 
 | Tool | 输入 | 输出/副作用 |
 |---|---|---|
 | `list_models` | 无 | 模型/接口/端点矩阵、默认值、配置与上限；不联网，不显示密钥 |
 | `plan_ecommerce_images` | 商品事实和绘图要求，见下方 | `ImagePlan`，免费，不读取参考图 |
+| `generate_images` | 三元组、tasks；可选wait_timeout_seconds | 提交并等待本组终态；成功时图片已落盘，会收费 |
+| `wait_image_tasks` | 三元组中的checkpointer/thread_id、必填task_ids；可选wait_timeout_seconds | 只等待已有任务，无新提交 |
 | `submit_image_tasks` | `checkpointer`、`thread_id`、`tasks` | 先持久化，再立即返回 `TaskPage`；后台收费出图及保存文件 |
 | `get_image_tasks` | `checkpointer`、`thread_id`；可选 `task_ids`、`cursor`、`limit` | `TaskPage`，查询已有状态，不重发绘图请求 |
 | `cancel_image_tasks` | `checkpointer`、`thread_id`、`task_ids` | `TaskPage`；取消未发出的任务，已可能发出则标记 unknown |
@@ -504,6 +508,46 @@ queued/preparing/running 是正常查询状态，返回 MCP isError=false，不�
 免费 `plan_ecommerce_images` 参数：product_name 必填 1–200 字符；selling_points 必填数组，最多 20 项、每项 1–500 字符，可为空；scene=main/detail/scene/poster，默认 main；count=1–12，默认 1；aspect_ratio 默认 1:1；resolution 可选；reference_images 最多 4 项，仅保留引用；requirements 最多 2000 字符、copy_text 最多 1000 字符，默认空。返回 items 含 ImageSpec；提交前逐项添加稳定 task_id，可选模型和接口。
 
 Prompt `ecommerce_brief` 接收必填 string product_name，指导先补充事实、免费规划，再授权出图。Resource `nanobanana://capabilities` 是无参数 JSON 文本，公开模型/格式矩阵、任务操作、三元组及本地 stdio 能力，不联网、不读取私有文件；精确端点矩阵见 list_models。
+
+### 同步生成与只读等待（开发版）
+
+`generate_images` 接收与 `submit_image_tasks` 完全相同的 checkpointer、thread_id、tasks；参考图非空时仍按原矩阵编辑，模型和分辨率路由不变。一次同步调用可等待1–12项全部进入终态，仍按共享账本并发限额执行；不是串行逐图调用。没有wait_timeout_seconds参与任务指纹，跨入口重放同一身份和内容不重复出图。
+
+`wait_image_tasks` 不接收tasks或提示词，不提交上游。必须提供同一命名空间/会话内1–100个已存在且不重复的task_ids，不支持空集合、错误会话或缺失任务，也无分页。两种等待工具均额外接收wait_timeout_seconds：严格整数1–1200、默认600秒；从本次开始等待计算，包含排队时间，不改变每项原有绘图超时。
+
+返回 `TaskWaitResult`：原TaskPage的全部字段加布尔 `wait_timed_out`。全部成功才isError=false，返回已落盘图片；若全部终态但含failed/unknown/cancelled，则isError=true、wait_timed_out=false，保留全部成功和失败结果。到期仍有活跃项时isError=true、wait_timed_out=true，保留当前状态和已完成图片，不能把部分结果视为整组成功。
+
+等待到期/客户端取消只结束本次等待，不触发队列取消、状态改写或重复收费；继续用get_image_tasks查询或wait_image_tasks等待原身份。需要主动取消时仍用cancel_image_tasks。若Host结束整个MCP进程，后台无法继续执行，按原生命周期恢复规则处理。Host工具时限应大于等待时限并留传输余量；现模板1800秒，等待最大1200秒。不要因Host超时而自动重新分配任务ID。
+
+以下是同步生成参数示例（会收费，仅在明确授权后调用）：
+
+```json
+{
+  "checkpointer": "shop-design",
+  "thread_id": "mug-main",
+  "tasks": [
+    {
+      "task_id": "main-01",
+      "prompt": "虚构商品示意：单只无品牌白色马克杯，白背景，无文字，无水印。",
+      "aspect_ratio": "1:1"
+    }
+  ],
+  "wait_timeout_seconds": 600
+}
+```
+
+继续等待只调用wait_image_tasks，参数如下，不再传绘图任务：
+
+```json
+{
+  "checkpointer": "shop-design",
+  "thread_id": "mug-main",
+  "task_ids": [
+    "main-01"
+  ],
+  "wait_timeout_seconds": 600
+}
+```
 
 ## 8. 功能说明
 
@@ -596,7 +640,7 @@ MCP 服务进程必须保持运行。正常退出会保留 queued，尚未发送
 | Python/锁或模块缺失 | 核对完整源码、3.12.14、pyproject.toml 与 uv.lock，再 uv sync --locked --no-dev，不删锁/升级依赖 |
 | .env 空、错误或权限不足 | 检查实际项目根 UTF-8 文件；空值、重复和非法值不能回退，运行账号需有读取权限 |
 | 修改后仍旧行为 | 重启实际 MCP 并重新发现工具，list_models 应有 async_tasks 和 capabilities；仅改开发目录不会更新 D:/MCP 副本 |
-| generate_images 不存在 | 0.2.0 已改为 submit_image_tasks + get_image_tasks，历史 request_id 仍用 get_batch_result |
+| generate_images / wait_image_tasks 不存在 | 正式v0.2.1仍为6工具异步版，开发新增能力需另行发布安装；历史request_id继续用get_batch_result，不能使用旧同步签名 |
 | 提交成功却没有图片 | queued/preparing/running 表示已登记，之后查询任务；failed/unknown 查看 error，勿自动换编号 |
 | 不支持所选格式/端点 | 按第 7 节矩阵或 list_models 选择；flash-lite 不支持 dalle，pro 仅 dalle，gemini-nano 不支持 edits |
 | 三元组冲突 | 同键已绑定其他参数，本次无新增；查询旧任务，只有明确的新收费业务才用新编号 |

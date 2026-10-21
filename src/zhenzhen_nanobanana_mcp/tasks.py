@@ -13,7 +13,15 @@ import httpx
 
 from .config import BusinessError, Settings
 from .media import MIB, MediaLoader
-from .models import ImageTask, SavedImage, TaskPage, TaskResult, resolve_api, route_model
+from .models import (
+    ImageTask,
+    SavedImage,
+    TaskPage,
+    TaskResult,
+    TaskWaitResult,
+    resolve_api,
+    route_model,
+)
 from .provider import Provider
 from .service import BatchService
 
@@ -316,6 +324,31 @@ class TaskQueue:
             tasks=[self.result(row) for row in rows[:limit]],
             next_cursor=rows[limit - 1]["seq"] if len(rows) > limit else None,
         )
+
+    async def wait(
+        self,
+        checkpointer: str,
+        thread_id: str,
+        task_ids: list[str],
+        wait_timeout_seconds: float = 600,
+    ) -> TaskWaitResult:
+        """Wait on the shared ledger only. Never own, cancel or resubmit rendering work."""
+        if not task_ids or len(task_ids) > 100 or len(set(task_ids)) != len(task_ids):
+            raise BusinessError("等待需指定1–100个不重复的task_id。")
+        if not 0 < wait_timeout_seconds <= 1200:
+            raise BusinessError("等待时限必须大于0且不超过1200秒。")
+        loop = asyncio.get_running_loop()
+        deadline = loop.time() + wait_timeout_seconds
+        while True:
+            page = self.get(checkpointer, thread_id, task_ids, limit=100)
+            if all(task.status not in ACTIVE for task in page.tasks):
+                return TaskWaitResult(**page.model_dump())
+            remaining = deadline - loop.time()
+            if remaining <= 0:
+                return TaskWaitResult(**page.model_dump(), wait_timed_out=True)
+            # Workers belong to the server lifespan, not this tool call. Cancellation
+            # propagates only through this sleep and cannot cancel provider requests.
+            await asyncio.sleep(min(0.2, remaining))
 
     def cancel(self, checkpointer: str, thread_id: str, task_ids: list[str]) -> TaskPage:
         self.get(checkpointer, thread_id, task_ids)
