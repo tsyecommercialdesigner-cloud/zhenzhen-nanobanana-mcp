@@ -29,7 +29,7 @@ function Resolve-DeliveryFiles {
       $TemplateText = [IO.File]::ReadAllText($FullPath, [Text.UTF8Encoding]::new($false, $true))
       foreach ($Line in ($TemplateText -split '\r?\n')) {
         if ($Line -match '^\s*(#.*)?$') { continue }
-        if ($Line -notmatch '^NANOBANANA_API_KEY=\s*$') { throw 'Unsafe .env.example: only an empty API key field is allowed.' }
+        if ($Line -notmatch '^ZHENZHEN_NANOBANANA_API_KEY=\s*$') { throw 'Unsafe .env.example: only an empty API key field is allowed.' }
         $Count++
       }
       if ($Count -ne 1) { throw 'Unsafe .env.example: API key field must occur exactly once.' }

@@ -139,7 +139,7 @@ class BatchService:
         if previous:
             return previous
         if not self.settings.api_key:
-            raise BusinessError("未配置 NANOBANANA_API_KEY；未发起收费请求。")
+            raise BusinessError("未配置 ZHENZHEN_NANOBANANA_API_KEY；未发起收费请求。")
         references, loaded = [], {}
         # Preflight the entire batch before any billable POST. Keep repeated inputs in one snapshot.
         try:

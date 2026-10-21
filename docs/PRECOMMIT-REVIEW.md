@@ -23,7 +23,7 @@
 
 ## 检查与秘密边界
 
-已有秘密/私有数据扫描、Git空白及忽略正反例通过，候选全为文本，无图片或数据库。唯一凭据模板为.env.example中的空NANOBANANA_API_KEY；API图像URL/base64为脱敏占位。硬编码api_key均为not-real安全测试值。模式扫描不保证识别所有秘密，提交前还需核对staged清单和源码包。
+已有秘密/私有数据扫描、Git空白及忽略正反例通过，候选全为文本，无图片或数据库。唯一凭据模板为.env.example中的空ZHENZHEN_NANOBANANA_API_KEY；API图像URL/base64为脱敏占位。硬编码api_key均为not-real安全测试值。模式扫描不保证识别所有秘密，提交前还需核对staged清单和源码包。
 
 本轮因workflow、测试与README来源变更，重新运行本地统一11阶段入口，并在推送前核对结果：format、lint、mypy、unittest/coverage、docs、contracts、security、build、protocol、member-install。本轮11阶段全部退出0，68项unittest通过，99个适用依赖审计0已知漏洞/0跳过。独立空缓存运行安装和测试.env内容/NTFS权限保留通过。源秘密扫描不读取或打印真实密钥，协议/安装使用隔离假配置，无收费业务调用；本地通过不代表真实Codex/DSH、收费上游、远端CI或正式Release已通过。
 

@@ -37,7 +37,9 @@ class CredentialTests(unittest.TestCase):
         self.env.write_text(value, encoding="utf-8")
 
     def test_file_wins_and_process_environment_not_modified(self):
-        self.write("# private test fixture\nNANOBANANA_API_KEY='file-not-real' # comment\n")
+        self.write(
+            "# private test fixture\nZHENZHEN_NANOBANANA_API_KEY='file-not-real' # comment\n"
+        )
         os.environ[API_KEY_FIELD] = "process-not-real"
         self.registry_mock.return_value = "registry-not-real"
         settings = Settings.from_env()
@@ -61,15 +63,25 @@ class CredentialTests(unittest.TestCase):
             load_api_key(self.root)
         self.assertEqual(self.registry_mock.call_count, 1)
 
+    def test_legacy_key_is_not_a_credential_source(self):
+        self.assertEqual(API_KEY_FIELD, "ZHENZHEN_NANOBANANA_API_KEY")
+        self.write("NANOBANANA_API_KEY=legacy-file-not-real\n")
+        os.environ["NANOBANANA_API_KEY"] = "legacy-process-not-real"
+        with self.assertRaisesRegex(BusinessError, API_KEY_FIELD):
+            load_api_key(self.root)
+        self.registry_mock.assert_called_once_with()
+        os.environ[API_KEY_FIELD] = "new-process-not-real"
+        self.assertEqual(load_api_key(self.root), "new-process-not-real")
+
     def test_empty_or_invalid_file_never_falls_back(self):
         os.environ[API_KEY_FIELD] = "old-process-not-real"
         for content in (
-            "NANOBANANA_API_KEY=\n",
-            "NANOBANANA_API_KEY='   '\n",
-            "NANOBANANA_API_KEY\n",
-            "NANOBANANA_API_KEY=Bearer fake\n",
-            "NANOBANANA_API_KEY='fake key'\n",
-            'NANOBANANA_API_KEY="fake\\nkey"\n',
+            "ZHENZHEN_NANOBANANA_API_KEY=\n",
+            "ZHENZHEN_NANOBANANA_API_KEY='   '\n",
+            "ZHENZHEN_NANOBANANA_API_KEY\n",
+            "ZHENZHEN_NANOBANANA_API_KEY=Bearer fake\n",
+            "ZHENZHEN_NANOBANANA_API_KEY='fake key'\n",
+            'ZHENZHEN_NANOBANANA_API_KEY="fake\\nkey"\n',
         ):
             with self.subTest(content=content):
                 self.write(content)
@@ -81,8 +93,8 @@ class CredentialTests(unittest.TestCase):
     def test_duplicate_and_syntax_errors_are_sanitized(self):
         os.environ[API_KEY_FIELD] = "old-process-not-real"
         for content in (
-            "NANOBANANA_API_KEY=first-not-real\nNANOBANANA_API_KEY=second-not-real\n",
-            "NANOBANANA_API_KEY=first-not-real\nBROKEN='second-not-real\n",
+            "ZHENZHEN_NANOBANANA_API_KEY=first-not-real\nZHENZHEN_NANOBANANA_API_KEY=second-not-real\n",
+            "ZHENZHEN_NANOBANANA_API_KEY=first-not-real\nBROKEN='second-not-real\n",
         ):
             self.write(content)
             with self.assertRaises(BusinessError) as raised:
@@ -104,10 +116,10 @@ class CredentialTests(unittest.TestCase):
         self.registry_mock.assert_not_called()
 
     def test_literal_variables_and_special_characters(self):
-        self.write('NANOBANANA_API_KEY="${OTHER_KEY}#$(command)"\n')
+        self.write('ZHENZHEN_NANOBANANA_API_KEY="${OTHER_KEY}#$(command)"\n')
         os.environ["OTHER_KEY"] = "must-not-expand"
         self.assertEqual(load_api_key(self.root), "${OTHER_KEY}#$(command)")
-        self.env.write_bytes(b"\xef\xbb\xbfNANOBANANA_API_KEY=example#literal\n")
+        self.env.write_bytes(b"\xef\xbb\xbfZHENZHEN_NANOBANANA_API_KEY=example#literal\n")
         self.assertEqual(load_api_key(self.root), "example#literal")
 
     def test_missing_and_invalid_compatible_sources_fail(self):
@@ -123,10 +135,10 @@ class CredentialTests(unittest.TestCase):
             load_api_key(self.root)
 
     def test_root_independent_of_cwd_no_search_or_environment_writes(self):
-        self.write("NANOBANANA_API_KEY=root-not-real\n")
+        self.write("ZHENZHEN_NANOBANANA_API_KEY=root-not-real\n")
         unrelated = self.root / "host-directory"
         unrelated.mkdir()
-        (unrelated / ".env").write_text("NANOBANANA_API_KEY=\n", encoding="utf-8")
+        (unrelated / ".env").write_text("ZHENZHEN_NANOBANANA_API_KEY=\n", encoding="utf-8")
         previous = Path.cwd()
         try:
             os.chdir(unrelated)
@@ -138,7 +150,7 @@ class CredentialTests(unittest.TestCase):
         self.assertNotIn(API_KEY_FIELD, os.environ)
 
     def test_old_input_allowlist_is_ignored(self):
-        self.write("NANOBANANA_API_KEY=test-not-real\n")
+        self.write("ZHENZHEN_NANOBANANA_API_KEY=test-not-real\n")
         self.assertEqual(Settings.from_env().input_dirs, ())
         dirs = (self.root / "商品素材", self.root / "outputs")
         os.environ["NANOBANANA_INPUT_DIRS"] = os.pathsep.join(map(str, dirs))
@@ -148,7 +160,7 @@ class CredentialTests(unittest.TestCase):
             self.assertEqual(Settings.from_env().input_dirs, ())
 
     def test_task_queue_configuration_bounds_and_defaults(self):
-        self.write("NANOBANANA_API_KEY=test-not-real\n")
+        self.write("ZHENZHEN_NANOBANANA_API_KEY=test-not-real\n")
         defaults = Settings.from_env()
         self.assertEqual((defaults.concurrency, defaults.max_pending_tasks), (4, 200))
         for key, valid, invalid in (
@@ -172,6 +184,10 @@ class CredentialTests(unittest.TestCase):
         with patch.dict(sys.modules, {"winreg": mock}), patch("sys.platform", "win32"):
             self.assertEqual(read_windows_user_value(), "registry-not-real")
             mock.OpenKey.assert_called_with(mock.HKEY_CURRENT_USER, "Environment", 0, mock.KEY_READ)
+            mock.QueryValueEx.assert_called_with(
+                mock.OpenKey.return_value.__enter__.return_value,
+                "ZHENZHEN_NANOBANANA_API_KEY",
+            )
             mock.QueryValueEx.return_value = (42, 5)
             with self.assertRaises(BusinessError):
                 read_windows_user_value()

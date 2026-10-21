@@ -5,7 +5,7 @@
 - 使用用户指定 `fastmcp`，而非项目约定的默认官方 SDK `MCPServer` 服务类；FastMCP 的底层 MCP SDK 版本由 `uv.lock` 锁定并单独记录。该例外只适用于本项目。
 - Python 精确锁定 3.12.14；hatchling + `src/zhenzhen_nanobanana_mcp/`；stdio 模块入口；不新增 Node 项目、不修改 Host 私有配置。
 - 不安装或模拟 spec-kit 工具。采用 `spec.md`、`plan.md`、`tasks.md` 与契约文件维护本任务。
-- 服务显式读取项目 `.env` 的 `NANOBANANA_API_KEY`，文件优先，仅缺失时回退进程及 Windows 当前账号 HKCU Environment；启动缺失/空值/非法时失败，日志 stderr。python-dotenv 1.2.4 为直接运行依赖，使用 parse_stream 检查错误及重复，不调用环境导入/变量展开 API。启动与工具调用不安装依赖。
+- 服务显式读取项目 `.env` 的 `ZHENZHEN_NANOBANANA_API_KEY`，文件优先，仅缺失时回退进程及 Windows 当前账号 HKCU Environment；启动缺失/空值/非法时失败，日志 stderr。python-dotenv 1.2.4 为直接运行依赖，使用 parse_stream 检查错误及重复，不调用环境导入/变量展开 API。启动与工具调用不安装依赖。
 - 根目录来自已验证 `src/<module>/` 布局及 pyproject 标记，不搜索 cwd/父目录；不同安装布局允许明确非秘密绝对路径 `NANOBANANA_PROJECT_DIR`，无法判断布局时要求指定，不从 .venv 路径猜测。输入/输出默认目录与该项目根目录一致。
 
 ## 结构

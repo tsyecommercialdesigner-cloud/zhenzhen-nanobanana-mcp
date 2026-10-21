@@ -50,3 +50,11 @@ main仍为ce7ce74a357782fcda820174c60a9c41090d7fa9，README/LICENSE与main一致
 既有PR Windows CI运行39413894145、dev push运行39413887898均在该实现基线上成功，包含68项测试、协议和独立安装等11阶段；原始上游validation资料、真实Codex/DSH及收费验收仍未验证。审查结论仅允许源码集成，不据此宣称完整业务交付或正式发行。未使用第二账号、未虚构独立APPROVED。
 
 由于GitHub不能让PR作者批准自己的PR，按用户直接授权将本仓库改为单人维护：规则集25471021保留active、PR、strict GitHub Actions quality、讨论解决、禁强推/删除和空bypass列表；仅required_approving_review_count改0、require_last_push_approval改false。此调整是已授权的治理政策修订，不通过--admin跳过CI或添加临时绕过身份。正常合并须绑定已审SHA，PR真实合并状态及最终main SHA以GitHub记录为准，不在待合并提交中预填未来合入SHA。Release工作流不触发。
+
+## 2026-10-21：统一密钥字段，先于真实Host验收
+
+用户要求所有来源统一使用`ZHENZHEN_NANOBANANA_API_KEY`。源码常量、错误提示、空模板、安装/交付/秘密检查、协议探针、配置回归及手册同步；保留原有文件优先与失败关闭规则，旧字段不作为凭据来源。新增回归证明旧文件/进程字段不能启动服务、可回退新进程字段；注册表替身明确断言查询新字段。未修改真实私有文件或用户环境变量，未记录真实密钥。
+
+首次完整检查在依赖审计被9条新公告阻断（Pillow12.3.0八条、certifi2026.7.22一条），未绕过门禁。核对[Pillow13发行说明](https://pillow.readthedocs.io/en/stable/releasenotes/13.0.0.html)与上游修复版本后，仅定向更新Pillow13.0.0、certifi2026.10.19及锁文件；其余依赖保持。再次运行`scripts/check.py`全部11阶段通过，69项测试、覆盖率、文档/契约、零告警严格依赖审计、构建、无收费stdio及独立空缓存安装均成功；假`.env`字节及ACL保留，业务调用0。
+
+用户已授权独立目录安装main、按Codex→DSH验证6工具与免费调用；该部分在后续执行，不用协议探针替代真实Host。PR及最终main的CI必须另读GitHub结果；未触发收费调用或发布。

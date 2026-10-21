@@ -34,9 +34,9 @@ $rejected = $false
 try { Resolve-DeliveryFiles -ProjectDir $Fixture -Whitelist @('link/file.txt') | Out-Null }
 catch { $rejected = $true }
 if (!$rejected) { throw 'Junction whitelist accepted' }
-[IO.File]::WriteAllText((Join-Path $Fixture '.env.example'), "NANOBANANA_API_KEY=`n")
+[IO.File]::WriteAllText((Join-Path $Fixture '.env.example'), "ZHENZHEN_NANOBANANA_API_KEY=`n")
 Resolve-DeliveryFiles -ProjectDir $Fixture -Whitelist @('.env.example') | Out-Null
-[IO.File]::WriteAllText((Join-Path $Fixture '.env.example'), "NANOBANANA_API_KEY=must-not-package`n")
+[IO.File]::WriteAllText((Join-Path $Fixture '.env.example'), "ZHENZHEN_NANOBANANA_API_KEY=must-not-package`n")
 $rejected = $false
 try { Resolve-DeliveryFiles -ProjectDir $Fixture -Whitelist @('.env.example') | Out-Null }
 catch { $rejected = $true }
