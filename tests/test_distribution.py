@@ -1,4 +1,5 @@
 import contextlib
+import hashlib
 import importlib.util
 import io
 import json
@@ -22,6 +23,50 @@ def script(name):
 
 
 class DistributionTests(unittest.TestCase):
+    def test_release_checksums_match_only_attached_versioned_packages(self):
+        workflow = yaml.load(
+            (ROOT / ".github/workflows/release.yml").read_text(), Loader=yaml.BaseLoader
+        )
+        command = next(
+            step["run"]
+            for step in workflow["jobs"]["verify"]["steps"]
+            if step.get("name") == "Release checksums and record"
+        )
+        with tempfile.TemporaryDirectory() as directory:
+            fixture = Path(directory)
+            dist = fixture / "dist"
+            dist.mkdir()
+            reports = fixture / "test-reports"
+            reports.mkdir()
+            (reports / "release-eligibility.json").write_text(
+                json.dumps({"version": "0.2.0", "commit": "a" * 40, "ci_run": "fixture"}),
+                encoding="utf-8",
+            )
+            names = [
+                "zhenzhen_nanobanana_mcp-0.2.0-py3-none-any.whl",
+                "zhenzhen_nanobanana_mcp-0.2.0.tar.gz",
+            ]
+            for name in names + [".gitignore", "old.whl", "SHA256SUMS", "RELEASE-NOTES.md"]:
+                (dist / name).write_bytes(b"fixture")
+            result = subprocess.run(
+                ["pwsh", "-NoProfile", "-Command", "$ErrorActionPreference='Stop';\n" + command],
+                cwd=fixture,
+                capture_output=True,
+            )
+            self.assertEqual(result.returncode, 0, result.stderr.decode(errors="replace"))
+            digest = hashlib.sha256(b"fixture").hexdigest()
+            self.assertEqual(
+                (dist / "SHA256SUMS").read_text(encoding="utf-8").splitlines(),
+                [f"{digest}  {name}" for name in sorted(names)],
+            )
+            (dist / names[0]).unlink()
+            missing = subprocess.run(
+                ["pwsh", "-NoProfile", "-Command", "$ErrorActionPreference='Stop';\n" + command],
+                cwd=fixture,
+                capture_output=True,
+            )
+            self.assertNotEqual(missing.returncode, 0)
+
     def test_release_requests_canonical_repository_and_nested_urls(self):
         module = script("release")
         base = f"https://api.github.com/repos/{module.REPOSITORY}"

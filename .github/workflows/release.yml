@@ -67,13 +67,15 @@ jobs:
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
       - name: Release checksums and record
         run: |
-          $Records = Get-ChildItem dist -File | Sort-Object Name | ForEach-Object {
-            $Hash = (Get-FileHash -LiteralPath $_.FullName -Algorithm SHA256).Hash.ToLowerInvariant()
-            "$Hash  $($_.Name)"
+          $Evidence = Get-Content test-reports/release-eligibility.json -Raw | ConvertFrom-Json
+          $PackageNames = @("zhenzhen_nanobanana_mcp-$($Evidence.version)-py3-none-any.whl", "zhenzhen_nanobanana_mcp-$($Evidence.version).tar.gz")
+          $Records = $PackageNames | Sort-Object | ForEach-Object {
+            $Package = Get-Item -LiteralPath (Join-Path dist $_) -ErrorAction Stop
+            $Hash = (Get-FileHash -LiteralPath $Package.FullName -Algorithm SHA256).Hash.ToLowerInvariant()
+            "$Hash  $($Package.Name)"
           }
           $Records | Set-Content -LiteralPath dist/SHA256SUMS -Encoding utf8NoBOM
           Copy-Item test-reports/release-eligibility.json dist/release-eligibility.json
-          $Evidence = Get-Content test-reports/release-eligibility.json -Raw | ConvertFrom-Json
           @("Commit: $($Evidence.commit)", "CI: $($Evidence.ci_run)", '', 'Locked source installation and both stdio protocol checks passed. See release-eligibility.json and SHA256SUMS.') | Set-Content dist/RELEASE-NOTES.md -Encoding utf8NoBOM
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
