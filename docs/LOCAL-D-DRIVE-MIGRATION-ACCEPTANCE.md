@@ -56,4 +56,8 @@
 
 仅提交脱敏验收文档及任务/验证记录，不提交 `.env`、Codex 私有配置、图片、SQLite、完整备份或原始运行日志。版本仍为 0.2.1，不运行发布流程。
 
-用户已授权在成功验收及提交推送后删除：`C:\MCP\zhenzhen-nanobanana-mcp` 和 `D:\MCP-backups\zhenzhen-nanobanana-mcp\20261021-a3dba663`。清理前再次核对原文件及 D 盘迁移结果，精确解析路径并检查目录联接/符号链接；其他安装、独立验收目录、父目录及开发仓库不在删除范围。实际清理结果另行更新，不能在删除前记录为完成。
+文档与任务先以 `b409894412ce56b5908b51fbfa7647d8b0caadb8` 提交推送至 dev；该提交的 [Windows CI39544644902](https://github.com/tsyecommercialdesigner-cloud/zhenzhen-nanobanana-mcp/actions/runs/39544644902) 成功。之后按用户授权删除 `C:\MCP\zhenzhen-nanobanana-mcp` 和 `D:\MCP-backups\zhenzhen-nanobanana-mcp\20261021-a3dba663`。清理前核对原文件及 D 盘迁移结果，精确解析路径且确认两个目录及其子项均无目录联接/符号链接；未发现 C 盘旧安装进程。
+
+首次删除因旧虚拟环境中 Administrators 所有的目录拒绝访问而停止；仅对旧安装根目录添加当前用户可继承的完全控制规则，子项权限仍不足，随后通过 Windows UAC 提权运行精确路径清理脚本完成删除。没有修改磁盘根目录或现用安装的权限。两个目标目录已确认不存在；本次备份中的旧凭据副本、旧 Codex 配置及完整旧环境随之删除，不能再引用为可回滚备份。其他安装、独立验收目录、父目录及开发仓库均不在删除范围。
+
+删除后再次通过当前 MCP 查询全部 10 个历史批次和本轮新任务，均返回 succeeded；11 张历史图片及新图的读取、解码与 SHA256 复核通过，`batches.sqlite3`、`tasks.sqlite3` 完整性检查均为 ok，现用 D 盘 `.env` 仍存在。清理未引发新的收费提交。最终补记实际结果单独提交；仅创建 dev→main PR 供正常 CI/评审，不合并或发布。
