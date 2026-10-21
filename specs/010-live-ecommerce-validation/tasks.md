@@ -4,4 +4,4 @@
 - [x] 实现手动收费预算/真实stdio验收脚本，5项无收费专项验证通过。
 - [x] 生成完整方案，真实stdio执行1+15任务全部成功；16次POST、16张图SHA正确，重复提交无新增请求，导出/执行提示一致。
 - [x] 观察全部16张真实图片并经MCP保存复核：7图Agent通过、9图需修订，不自动重画；脱敏证据见live-acceptance.json。
-- [ ] 全部门禁通过后提交并推送dev、创建PR、跟踪CI，不合并发布。
+- [x] 本地11项门禁通过后提交8d5cca1并常规推送dev，创建[PR #19](https://github.com/tsyecommercialdesigner-cloud/zhenzhen-nanobanana-mcp/pull/19)；GitHub Windows CI以PR实时检查为准，持续跟踪，不合并发布。
