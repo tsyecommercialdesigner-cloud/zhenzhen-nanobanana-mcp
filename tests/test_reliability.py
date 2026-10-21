@@ -8,6 +8,7 @@ import sys
 import tempfile
 import time
 import unittest
+from contextlib import closing
 from dataclasses import replace
 from pathlib import Path
 from unittest.mock import AsyncMock, patch
@@ -383,7 +384,7 @@ class ReliabilityTests(unittest.IsolatedAsyncioTestCase):
             sort_keys=True,
             ensure_ascii=False,
         )
-        with sqlite3.connect(self.queue.db_path) as db:
+        with closing(sqlite3.connect(self.queue.db_path)) as db, db:
             db.execute(
                 "CREATE TABLE image_tasks (seq INTEGER PRIMARY KEY AUTOINCREMENT,checkpointer TEXT,thread_id TEXT,task_id TEXT,fingerprint TEXT,request TEXT,actual_model TEXT,api_format TEXT,endpoint TEXT,state TEXT,base_url TEXT,owner TEXT,images TEXT,error TEXT,created REAL,updated REAL,UNIQUE(checkpointer,thread_id,task_id))"
             )
@@ -432,7 +433,7 @@ class ReliabilityTests(unittest.IsolatedAsyncioTestCase):
                 await staging.submit(
                     "load", "load", [self.task(str(i)) for i in range(start, start + 20)]
                 )
-        with sqlite3.connect(root / "metrics.sqlite3") as db:
+        with closing(sqlite3.connect(root / "metrics.sqlite3")) as db, db:
             db.execute("CREATE TABLE metrics(active INTEGER,peak INTEGER)")
             db.execute("INSERT INTO metrics VALUES (0,0)")
         fixture = Path(__file__).with_name("queue_load_fixture.py")
@@ -454,7 +455,9 @@ class ReliabilityTests(unittest.IsolatedAsyncioTestCase):
                         self.fail("Load process exited before readiness")
                     await asyncio.sleep(0.02)
             (root / "go").touch()
-            async with asyncio.timeout(30):
+            # This is a bounded completion guard, not a throughput requirement.
+            # Windows fsync under coverage is slower; keep every correctness check.
+            async with asyncio.timeout(90 if sys.platform == "win32" else 30):
                 while True:
                     rows = []
                     cursor = 0
@@ -476,10 +479,10 @@ class ReliabilityTests(unittest.IsolatedAsyncioTestCase):
             )
             self.assertEqual(len(list((root / "posts").iterdir())), 200)
             self.assertEqual(len({t.provider_idempotency_key for t in rows}), 200)
-            with sqlite3.connect(root / "metrics.sqlite3") as db:
+            with closing(sqlite3.connect(root / "metrics.sqlite3")) as db:
                 peak = db.execute("SELECT peak FROM metrics").fetchone()[0]
             self.assertEqual(peak, 5)
-            with sqlite3.connect(staging.db_path) as db:
+            with closing(sqlite3.connect(staging.db_path)) as db:
                 self.assertEqual(db.execute("PRAGMA integrity_check").fetchone()[0], "ok")
                 self.assertEqual(db.execute("PRAGMA journal_mode").fetchone()[0], "wal")
             report = {

@@ -5,6 +5,7 @@ import io
 import os
 import sqlite3
 import sys
+from contextlib import closing
 from pathlib import Path
 
 from PIL import Image
@@ -29,7 +30,7 @@ async def main():
     media = decode_image(data.getvalue())
 
     def change_active(delta):
-        with sqlite3.connect(root / "metrics.sqlite3", timeout=5) as db:
+        with closing(sqlite3.connect(root / "metrics.sqlite3", timeout=5)) as db, db:
             db.execute("BEGIN IMMEDIATE")
             db.execute("UPDATE metrics SET active=active+?", (delta,))
             db.execute("UPDATE metrics SET peak=MAX(peak,active)")

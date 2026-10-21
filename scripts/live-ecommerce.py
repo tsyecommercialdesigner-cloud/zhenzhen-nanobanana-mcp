@@ -15,6 +15,7 @@ import ssl
 import sys
 import time
 from collections import Counter
+from contextlib import closing
 from dataclasses import replace
 from pathlib import Path
 
@@ -55,7 +56,7 @@ class PaidBudget:
         self.path = root / "paid-budget.sqlite3"
         encoded = json.dumps(manifest, sort_keys=True, ensure_ascii=False).encode()
         digest = hashlib.sha256(encoded).hexdigest()
-        with sqlite3.connect(self.path) as db:
+        with closing(sqlite3.connect(self.path)) as db, db:
             db.execute("PRAGMA synchronous=FULL")
             db.execute(
                 "CREATE TABLE IF NOT EXISTS budget_config (singleton INTEGER PRIMARY KEY, digest TEXT NOT NULL)"
@@ -71,7 +72,7 @@ class PaidBudget:
     def reserve(self, request: httpx.Request, body: bytes):
         key = request.headers.get("Idempotency-Key", "")
         db_path = self.root / "output/tasks.sqlite3"
-        with sqlite3.connect(db_path.as_uri() + "?mode=ro", uri=True) as tasks:
+        with closing(sqlite3.connect(db_path.as_uri() + "?mode=ro", uri=True)) as tasks:
             tasks.row_factory = sqlite3.Row
             row = tasks.execute("SELECT * FROM image_tasks WHERE provider_key=?", (key,)).fetchone()
         if (
@@ -95,7 +96,7 @@ class PaidBudget:
         ):
             raise BusinessError("实际模型端点/提示词与批准的任务不一致；未发送。")
         kind = self.allowed[row["task_id"]]
-        with sqlite3.connect(self.path, timeout=10) as db:
+        with closing(sqlite3.connect(self.path, timeout=10)) as db, db:
             db.execute("PRAGMA synchronous=FULL")
             db.execute("BEGIN IMMEDIATE")
             if db.execute(
@@ -119,7 +120,7 @@ class PaidBudget:
             )
 
     def summary(self):
-        with sqlite3.connect(self.path) as db:
+        with closing(sqlite3.connect(self.path)) as db:
             counts = dict(db.execute("SELECT kind,count(*) FROM paid_attempts GROUP BY kind"))
         return {"reserved_post_attempts": sum(counts.values()), "counts": counts, "limit": LIMITS}
 

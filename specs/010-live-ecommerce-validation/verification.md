@@ -24,3 +24,7 @@
 用户条件授权的后续动作是提交、常规推送dev并创建dev→main PR；不包含合并或发布。实际提交与CI链接将在PR中保留，本验收不单独授予后续真实收费。
 
 已完成交付动作：功能提交`8d5cca1a893cf4a9dcb0f095ed2b4dc3856acc1b`常规推送dev，并创建[dev→main PR #19](https://github.com/tsyecommercialdesigner-cloud/zhenzhen-nanobanana-mcp/pull/19)。GitHub Windows quality的实际状态与日志以该PR检查为准；本记录不提前宣称远端CI通过，也未合并或发布。
+
+首轮Windows CI暴露验收脚本/新夹具的SQLite连接未显式关闭、中文子进程管道编码，以及耐久文件批量测试触发短等待上限。已改为事务退出后显式close（不依赖GC/忽略删除失败），新增连接关闭回归，并明确子进程UTF-8。批量测试只对Windows将完成等待从10/30秒调整为30/90秒，以适应覆盖率模式下的耐久文件操作；200任务、25图、3进程、并发5、SHA/幂等/完整性断言全部保留，非吞吐SLA不变。此修复不重新执行收费测试，原16次计数和结果仍保持。
+
+修复后重新运行本地完整门禁，`.venv/bin/python scripts/check.py`退出0，11阶段全部通过。当前165项测试中164通过、1项Windows注册表测试在Linux按平台跳过；包含6项不收费的预算专项测试。该结果是本地验证，不能替代PR上最新提交的Windows CI结果。

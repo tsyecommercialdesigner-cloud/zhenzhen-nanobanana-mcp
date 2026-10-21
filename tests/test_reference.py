@@ -555,8 +555,13 @@ class ReferenceTests(unittest.IsolatedAsyncioTestCase):
                     await self.design.submit("reference", 1, record.digest, selected, True)
                 ).tasks
             ]
-        done = await self.queue.wait("ecommerce-design", "reference", task_ids, 10)
-        self.assertTrue(all(t.status == "succeeded" for t in done.tasks))
+        done = await self.queue.wait(
+            "ecommerce-design", "reference", task_ids, 30 if sys.platform == "win32" else 10
+        )
+        self.assertTrue(
+            all(t.status == "succeeded" for t in done.tasks),
+            [(t.task_id, t.status, t.error) for t in done.tasks],
+        )
         self.assertEqual(self.queue.storage.provider.render.await_count, 25)
 
     async def test_real_stdio_shared_replica_loop_in_both_protocols(self):

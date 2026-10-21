@@ -3,11 +3,13 @@
 import asyncio
 import importlib.util
 import json
+import os
 import sqlite3
 import subprocess
 import sys
 import tempfile
 import unittest
+from contextlib import closing
 from pathlib import Path
 from unittest.mock import patch
 
@@ -42,7 +44,7 @@ class LiveBudgetTests(unittest.IsolatedAsyncioTestCase):
         self.manifest = manifest
         self.budget = live.PaidBudget(self.root, manifest)
         (self.root / "output").mkdir()
-        with sqlite3.connect(self.root / "output/tasks.sqlite3") as db:
+        with closing(sqlite3.connect(self.root / "output/tasks.sqlite3")) as db, db:
             db.execute(
                 "CREATE TABLE image_tasks (provider_key TEXT, checkpointer TEXT, thread_id TEXT, task_id TEXT, request TEXT, actual_model TEXT, base_url TEXT)"
             )
@@ -144,6 +146,8 @@ class LiveBudgetTests(unittest.IsolatedAsyncioTestCase):
             ],
             capture_output=True,
             text=True,
+            encoding="utf-8",
+            env={**os.environ, "PYTHONIOENCODING": "utf-8"},
         )
         self.assertEqual(result.returncode, 2)
         self.assertIn("明确授权", result.stderr)
@@ -163,3 +167,22 @@ class LiveBudgetTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(env["HTTPS_PROXY"], "http://proxy.test:8080")
         self.assertNotIn("GH_TOKEN", env)
         self.assertNotIn("GITHUB_TOKEN", env)
+
+    async def test_budget_releases_database_handles_after_each_operation(self):
+        opened = []
+        original = sqlite3.connect
+
+        def connect(*args, **kwargs):
+            db = original(*args, **kwargs)
+            opened.append(db)
+            return db
+
+        with patch.object(live.sqlite3, "connect", side_effect=connect):
+            budget = live.PaidBudget(self.root, self.manifest)
+            request = self.request()
+            budget.reserve(request, await request.aread())
+            self.assertEqual(budget.summary()["reserved_post_attempts"], 1)
+        self.assertEqual(len(opened), 4)
+        for db in opened:
+            with self.assertRaises(sqlite3.ProgrammingError):
+                db.execute("SELECT 1")

@@ -18,4 +18,6 @@ HTTP发送前用SQLite事务预留次数，校验Idempotency-Key、固定设计/
 
 自动化只对费用边界使用MockTransport：原提示校验、16次和分类型上限、持久重启、并发重复、响应不确定不再发送、无显式CLI授权拒绝，以及子进程密钥转交不混入其他凭据。
 
+费用/任务数据库连接在每次操作后显式关闭，事务上下文仅负责提交/回滚，不能代替close；连接释放另有回归检查，避免Windows文件占用。CLI的编码测试显式使用UTF-8，不通过跳过Windows断言或忽略清理错误掩盖问题。
+
 2026-10-21已执行一轮用户授权的5+8+3真实验收，完整结果见[验收记录](../specs/010-live-ecommerce-validation/verification.md)。16次POST全部完成16图，复用/复核未增加收费；7图Agent通过，9图标记需修订，未自动重画。规划时应把负向绘图约束放在requirements，Textual Contents只填写确实希望绘制的文案。

@@ -451,8 +451,16 @@ class SuiteTests(unittest.IsolatedAsyncioTestCase):
         pages = []
         for batch in (ids[:20], ids[20:]):
             pages.extend((await self.design.submit("suite", 1, record.digest, batch, True)).tasks)
-        done = await self.queue.wait("ecommerce-design", "suite", [t.task_id for t in pages], 10)
-        self.assertTrue(all(t.status == "succeeded" for t in done.tasks))
+        done = await self.queue.wait(
+            "ecommerce-design",
+            "suite",
+            [t.task_id for t in pages],
+            30 if sys.platform == "win32" else 10,
+        )
+        self.assertTrue(
+            all(t.status == "succeeded" for t in done.tasks),
+            [(t.task_id, t.status, t.error) for t in done.tasks],
+        )
         self.assertEqual(self.queue.storage.provider.render.await_count, 25)
         self.assertEqual(self.design.progress("suite").unsubmitted_panel_ids, [])
         self.assertEqual(len({p.style_digest for p in export_suite(record).prompts}), 1)
