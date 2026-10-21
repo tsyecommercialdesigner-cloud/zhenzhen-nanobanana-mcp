@@ -8,6 +8,7 @@ from pathlib import Path
 import yaml
 
 root = Path(__file__).resolve().parents[1]
+expected_project_dir = r"D:\MCP\zhenzhen-nanobanana-mcp"
 text = (root / "MANUAL.md").read_text(encoding="utf-8")
 for block in re.findall(r"```json\n(.*?)\n```", text, re.DOTALL):
     json.loads(block)
@@ -17,7 +18,12 @@ for filename in (".mcp.json.example", "templates/claude-code.mcp.json.example"):
     data = json.loads((root / filename).read_text(encoding="utf-8"))
     entry = data["mcpServers"]["zhenzhen-nanobanana-mcp"]
     assert "cwd" not in entry and "env" not in entry and entry["command"] == "uv"
+    assert entry["args"][:2] == ["--directory", expected_project_dir]
 config = tomllib.loads((root / "templates/codex.config.toml.example").read_text(encoding="utf-8"))
+assert config["mcp_servers"]["zhenzhen-nanobanana-mcp"]["args"][:2] == [
+    "--directory",
+    expected_project_dir,
+]
 assert (
     "ZHENZHEN_NANOBANANA_API_KEY"
     not in config["mcp_servers"]["zhenzhen-nanobanana-mcp"]["env_vars"]
@@ -44,6 +50,7 @@ patch = yaml.load(
 entry = patch[0]["insert"][0]
 assert entry["name"] == "@deepseek-ai/dsh-mcp-client"
 assert "env" not in entry["config"]
+assert entry["config"]["args"][:2] == ["--directory", expected_project_dir]
 assert len(entry["config"]["serverName"]) <= 32
 schema_path = root / ".cache/dsh-schema.json"
 if schema_path.exists():

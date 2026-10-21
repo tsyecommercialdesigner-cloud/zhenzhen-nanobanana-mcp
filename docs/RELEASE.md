@@ -36,4 +36,6 @@
 
 按MANUAL第5节保留.env/ACL、图片、tasks.sqlite3与batches.sqlite3，再切回已记录的SHA、安装该锁及复验协议。0.1不处理新任务队列，保留数据，勿用reset --hard、clean -fdx或删账本绕过问题。
 
-main初始SHA ce7ce74a357782fcda820174c60a9c41090d7fa9只有README/LICENSE，不能当作可用MCP版本。目前README提供已通过CI的完整SHA试用路径；正式Release安装器仍拒绝草稿/缺失Release，tag存在也不改变这一点。本轮草稿创建授权不包含最终公开；门禁、CI、tag与草稿是否已生成按实际GitHub记录报告。
+main初始SHA ce7ce74a357782fcda820174c60a9c41090d7fa9只有README/LICENSE，不能当作可用MCP版本。上述草稿阶段的授权不包含最终公开；用户随后另行授权核对、公开及正式版本安装，现v0.2.0已公开，独立远端安装和无收费协议通过，见[正式发布验收](RELEASE-ACCEPTANCE.md)。安装器仍拒绝草稿/缺失Release，tag存在也不改变这一点。
+
+2026-10-21本轮仅调整默认安装盘符为D盘，归档发布验收文档和任务状态，经dev→PR→Windows CI与审查后合入main。默认目录为D:\MCP\zhenzhen-nanobanana-mcp，层级不变；不搬迁现有安装、不修改用户Host、不新增收费调用、不运行发布工作流，也不修改或重复发布v0.2.0。旧版脚本安装到D盘须显式传入-InstallRoot 'D:\MCP'；本轮提交不声称已回写发行标签。

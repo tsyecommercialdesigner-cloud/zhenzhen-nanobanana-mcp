@@ -1,7 +1,7 @@
 # Clone a real, CI-verified release. Does not write credentials or modify existing installs.
 param(
   [string]$Tag = '',
-  [string]$InstallRoot = 'C:\MCP',
+  [string]$InstallRoot = 'D:\MCP',
   [switch]$VerifyOnly
 )
 $ErrorActionPreference = 'Stop'
