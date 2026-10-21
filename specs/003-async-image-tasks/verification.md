@@ -26,3 +26,15 @@
 - 本次未做四Host GUI、真实上游、Linux/macOS、网络文件系统或不同机器共享SQLite验证。不保证精确输出尺寸、费用、退款或供应商网络侧exactly-once。
 - SQLite只在同一实际输出目录共享本地队列；多个Host需配置相同并发。MCP关闭期间不执行，心跳租约30秒，重启仅恢复明确未发出任务。命名空间不是多用户认证。
 - C:\MCP运行副本、用户.env/ACL、Host配置、现有业务账本未修改；无新成员ZIP。GitHub迁移G06仍待授权和实际远端CI/评审/发布，本地通过不等于GitHub Release已发布。
+
+## 2026-10-21后续：首张真实收费验收
+
+用户另行授权1张主图及相同身份重放，不授权批量或发布。main728172c的独立stdio实例实测gemini-nano-banana-2.1基础版/DALL·E Generations：约0.328秒返回queued，约24.390秒查询到succeeded，1张1024×1024 PNG保存并核对哈希。相同三元组/请求重放reused=true，任务行及图片不变，HTTP观察共1次POST且第二次请求保护未触发。完整证据与边界见[单张验收记录](../../docs/SINGLE-IMAGE-ACCEPTANCE.md)；不能扩展为其余模型、接口、编辑、批量或账单金额实测通过。上述原有记录仍表示各自实施时点的验证范围。
+
+## 同日后续：三张并发生成与一次编辑
+
+用户新增授权后，一次提交3项gemini-nano-banana-2.1详情页，约0.438秒返回queued，查询同时3项running，真实HTTP重叠峰值3，约32.531秒三项全部succeeded。随后使用先前主图的绝对路径，提交一次nano-banana-pro multipart Edits，约0.375秒返回queued、40.469秒查询到succeeded。四张1024×1024 PNG均验证格式/像素/字节/hash并目视检查；原图未改动。整批及编辑分别按原身份重放，均reused=true、任务行不变，真实POST计数3→3及4→4，预算保护未触发。完整记录见[小批量与编辑验收](../../docs/BATCH-EDIT-ACCEPTANCE.md)；未做10项、故障恢复、其它模型/接口或发布。
+
+## 同日后续：十项详情页真实验收
+
+按用户后续授权，一次登记10项基础gemini-nano-banana-2.1 Generations，0.406秒返回queued；默认并发4，查询running和真实HTTP重叠峰值均为4，80.625秒观察到全部成功。9张1024×1024 PNG及1张2048×2048 JPEG均校验通过；整批原身份重放10项reused=true，账本不变、真实POST仍为10、预算保护未触发。见[10项验收](../../docs/TEN-IMAGE-ACCEPTANCE.md)。未做故障恢复或发布。

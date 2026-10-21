@@ -40,7 +40,9 @@
 
 ## 2. 项目初始化
 
-**发布前置条件**：截至2026-10-20，远端main只有README与LICENSE（dev是候选源码），没有可安装的正式Release或通过CI的MCP版本。下面流程会在缺少Release时停止，这是预期行为。首版需由维护者按第6节完成PR、CI、评审与受控发布后才能安装；不要使用远端初始提交 `ce7ce74a357782fcda820174c60a9c41090d7fa9` 作为MCP版本。元数据0.2.0不等于已存在v0.2.0标签。
+**发布与试用状态（2026-10-21）**：main已包含完整MCP，提交`728172caf5794a374dda4c418779d34cd372155d`通过[Windows CI39525493697](https://github.com/tsyecommercialdesigner-cloud/zhenzhen-nanobanana-mcp/actions/runs/39525493697)，且已独立安装及完成限定范围的Host/收费验收。目前仍无正式Release，元数据0.2.0不等于存在v0.2.0标签；不要把远端初始提交`ce7ce74a357782fcda820174c60a9c41090d7fa9`当作MCP版本。
+
+未发布阶段可按[README固定CI提交的试用步骤](README.md#快速安装与配置)安装上述完整SHA；已验证该提交的clone、锁定无开发依赖安装、配置和stdio入口。试用提交不冒充正式发行。下面保留正式Release的安装流程及安装脚本，它们在没有Release时仍应明确停止，不会静默回退main。正式发布后优先使用Release记录的tag/SHA，升级前保留`.env`与私有图片/账本。
 
 仓库：https://github.com/tsyecommercialdesigner-cloud/zhenzhen-nanobanana-mcp.git 。正式版本与验收记录从 [Releases](https://github.com/tsyecommercialdesigner-cloud/zhenzhen-nanobanana-mcp/releases) 取得；[CI](https://github.com/tsyecommercialdesigner-cloud/zhenzhen-nanobanana-mcp/actions/workflows/ci.yml) 与发布记录必须对应同一完整SHA。仓库公开，HTTPS clone无需密钥；不要把GitHub令牌放入URL。以后改为私有时使用自己的SSH或Git凭据管理器授权，业务API密钥不能用于Git认证。
 
