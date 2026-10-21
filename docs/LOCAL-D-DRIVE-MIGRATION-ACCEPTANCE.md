@@ -61,3 +61,21 @@
 首次删除因旧虚拟环境中 Administrators 所有的目录拒绝访问而停止；仅对旧安装根目录添加当前用户可继承的完全控制规则，子项权限仍不足，随后通过 Windows UAC 提权运行精确路径清理脚本完成删除。没有修改磁盘根目录或现用安装的权限。两个目标目录已确认不存在；本次备份中的旧凭据副本、旧 Codex 配置及完整旧环境随之删除，不能再引用为可回滚备份。其他安装、独立验收目录、父目录及开发仓库均不在删除范围。
 
 删除后再次通过当前 MCP 查询全部 10 个历史批次和本轮新任务，均返回 succeeded；11 张历史图片及新图的读取、解码与 SHA256 复核通过，`batches.sqlite3`、`tasks.sqlite3` 完整性检查均为 ok，现用 D 盘 `.env` 仍存在。清理未引发新的收费提交。最终补记实际结果单独提交；仅创建 dev→main PR 供正常 CI/评审，不合并或发布。
+
+## 后续授权：PR 合入、历史分支清理及 dev 同步
+
+上段“不合并”是当时阶段范围。用户随后明确授权审查及 CI 通过后合并 [PR #11](https://github.com/tsyecommercialdesigner-cloud/zhenzhen-nanobanana-mcp/pull/11)，实际合入提交为 `23fe6062c491e0296e517e9793ee70fb9128d4b9`；本节归档其后已完成的操作，不预填本次归档 PR 的合并或 CI 结果。
+
+| 阶段 | 已验证结果 |
+|---|---|
+| PR #11 head | `d2942bafdbef85e4be7b15d69602c3afab25e798` 的 [PR Windows CI39544970155](https://github.com/tsyecommercialdesigner-cloud/zhenzhen-nanobanana-mcp/actions/runs/39544970155) 及 dev push CI39544948091 成功；审查记录留在 PR，正常门禁合并，无绕过。 |
+| main 合入提交复验 | [Windows CI39545262939](https://github.com/tsyecommercialdesigner-cloud/zhenzhen-nanobanana-mcp/actions/runs/39545262939) 首次在隔离并发测试等待 10 项替身任务时触发 5 秒超时；本地原测试复查通过。同一 SHA 未改代码、未放宽断言，第 2 次运行全部 11 阶段及 71 项测试通过。日志提示调度变慢，运行器性能波动仅为可能原因，未确定根因；首次失败记录保留在 Actions/PR。 |
+| 本地历史分支删除 | 用户确认后以 `git branch -d` 删除 `feature/async-image-tasks`、`migration/github-distribution`；两者均指向 `ce7ce74a357782fcda820174c60a9c41090d7fa9`，无未合入 main/dev 的提交，未被任何工作区占用。未删除远端分支。 |
+| dev 快进同步 | 本地 dev 以 `git merge --ff-only origin/main` 从 d2942ba 快进到 `23fe6062c491e0296e517e9793ee70fb9128d4b9`，正常推送远端 dev。核对时本地仅 dev，远端 main/dev 与本地 dev 同 SHA，工作区干净；未强推。 |
+| 同步触发的 CI | dev push 的 [Windows CI39549820598](https://github.com/tsyecommercialdesigner-cloud/zhenzhen-nanobanana-mcp/actions/runs/39549820598) 在上述 SHA 成功。下载核对 artifact：format、lint、types、unit、coverage、docs、contracts、security、build、protocol、member-install 全部 exit_code=0，71 项测试通过，秘密及依赖审计通过。 |
+
+用户另行授权清理后，空的 `D:\MCP-backups\zhenzhen-nanobanana-mcp` 已删除；独立发布验收目录 `D:\MCP-v021-acceptance-20261021-c7b50eec` 也已核实为无进程/现用配置依赖、无目录联接的临时测试安装、缓存、附件副本和日志后删除。它不是现用安装，也没有有效绘图提交；[发布验收文档](RELEASE-0.2.1-ACCEPTANCE.md)中该目录是当时证据位置，现已不再保留原始副本。已提交的脱敏验收结论与远端 CI/PR 记录保留。
+
+同步后免费核对：Codex stdio 仍指向 `D:\MCP\zhenzhen-nanobanana-mcp`，实际安装保持发布标签 v0.2.1 的 `09501092c369e2a314df757eece5fa8d7a38e64e`，没有随开发分支快进更新运行副本。当前会话 `list_models` 成功，默认 `gemini-nano-banana-2.1`、密钥已配置、异步任务启用；10 个旧批次和 1 个新任务保留，两份 SQLite 完整性均为 ok，已有新任务免费查询仍为 succeeded。这里只读现有配置/数据，不输出凭据，不追加收费调用。
+
+以上分支对齐是本次归档提交前的时点状态；本次新增文档仍按 dev→PR→Windows CI→评审→合并流程执行，实际合入 SHA 和独立 main CI 在对应 PR 留档。私有资料、D 盘现用安装及任务数据保持，v0.2.0/v0.2.1 标签与 Release 不改，不运行发布流程；G06.5 真实故障恢复仍未实测。
