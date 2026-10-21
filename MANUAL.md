@@ -47,6 +47,8 @@
 
 ## 2. 项目初始化
 
+当前候选为v0.2.2，新增同步工具将纳入Release草稿，见[候选说明](docs/RELEASE-0.2.2.md)。正式公开与现用安装更新尚未执行，以下仍安装已公开v0.2.1；不要仅因v0.2.2标签存在就绕过草稿安装限制。
+
 ### 首次安装
 
 先核对[正式 Release](https://github.com/tsyecommercialdesigner-cloud/zhenzhen-nanobanana-mcp/releases/tag/v0.2.1)及其 `release-eligibility.json` 的标签、完整提交和 CI。下面在 PowerShell 7 运行：只创建父目录，由 clone 创建同名项目目录；目录已存在时改用第 5 节，不能覆盖。
@@ -449,7 +451,7 @@ if ($LASTEXITCODE -ne 0) { throw '回滚协议复验失败。' }
 
 ### 可选ZIP（仅按明确需要）
 
-仅保留旧成员明确需要时的补充分发：`pwsh -NoProfile -File './scripts/package-user.ps1'`，白名单`user-files.json`，当前元数据对应输出`output/zhenzhen-nanobanana-mcp-0.2.1-user.zip`（本轮不生成或发布）；已有包拒绝覆盖，可显式指定`-DestinationDirectory`。ZIP只有一个`zhenzhen-nanobanana-mcp/`顶层目录，解压到父目录即可。它不携带.env/依赖环境/开发资料/业务图片，也不能代替GitHub CI与正式版本。完整可选验收仍由`verify-delivery.py`执行，本次不额外发布成员ZIP。
+仅保留旧成员明确需要时的补充分发：`pwsh -NoProfile -File './scripts/package-user.ps1'`，白名单`user-files.json`，当前候选元数据对应输出`output/zhenzhen-nanobanana-mcp-0.2.2-user.zip`（本轮不生成或发布）；已有包拒绝覆盖，可显式指定`-DestinationDirectory`。ZIP只有一个`zhenzhen-nanobanana-mcp/`顶层目录，解压到父目录即可。它不携带.env/依赖环境/开发资料/业务图片，也不能代替GitHub CI与正式版本。完整可选验收仍由`verify-delivery.py`执行，本次不额外发布成员ZIP。
 
 ## 7. 资源清单
 
