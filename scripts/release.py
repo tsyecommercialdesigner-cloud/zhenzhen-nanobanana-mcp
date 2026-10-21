@@ -16,7 +16,7 @@ REPOSITORY = "tsyecommercialdesigner-cloud/zhenzhen-nanobanana-mcp"
 
 def api(path, missing_ok=False):
     request = Request(
-        f"https://api.github.com/repos/{REPOSITORY}/{path}",
+        f"https://api.github.com/repos/{REPOSITORY}" + (f"/{path}" if path else ""),
         headers={
             "Authorization": f"Bearer {os.environ['GH_TOKEN']}",
             "Accept": "application/vnd.github+json",
