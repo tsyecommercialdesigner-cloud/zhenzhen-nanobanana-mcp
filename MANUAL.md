@@ -19,7 +19,7 @@
 | 框架与 SDK | FastMCP `4.1.0`、MCP SDK `2.3.0`，以项目锁文件为准 |
 | 已验收协议 | `2026-07-28` 请求级元数据模式、兼容 `2025-11-25` 初始化握手模式 |
 | Host 配置 | Cherry Studio、Codex、Claude Code；DSH 共用补丁适用于 web、desktop、multica 三种 profile，需逐份合并 |
-| 实测边界 | Codex app-server 与 DSH CLI 隔离 profile 的工具发现/免费调用已通过；当前 Codex 的 D 盘安装和历史批次查询也已通过。DSH 三种私人 profile 完整配置、Multica 集成、各 GUI 和 Bash/Zsh 执行均未因此视为验证通过 |
+| 实测边界 | v0.2.2已通过独立安装、双协议8工具及重启后当前Codex的免费历史查询；更早Codex app-server/DSH CLI隔离profile结果保留历史版本范围，不代表v0.2.2已在DSH复验。DSH三种私人profile完整配置、Multica集成、各GUI和Bash/Zsh执行均未因此视为验证通过 |
 
 正式版本对应 [Windows CI39571818062](https://github.com/tsyecommercialdesigner-cloud/zhenzhen-nanobanana-mcp/actions/runs/39571818062) 及[发布安装验收](docs/RELEASE-0.2.2-ACCEPTANCE.md)。现用D盘升级和重启后当前Codex会话验收见[本机v0.2.2验收](docs/LOCAL-V0.2.2-UPGRADE-ACCEPTANCE.md)，更早迁移见[历史验收](docs/LOCAL-D-DRIVE-MIGRATION-ACCEPTANCE.md)。本手册是发布后的维护文档，不重写旧标签或Release附件；开发分支不作为默认成员安装来源。
 
@@ -354,7 +354,7 @@ foreach ($PatchFile in $PatchFiles) {
 
 保存后分别在原生 DSH、App、Multica 中按实际版本重新加载所选 profile 或重启对应 DSH 运行实例；不凭空指定尚未核实的 GUI 按钮。检查补丁加载日志、v0.2.2的8个工具发现，以及工具权限预设：先允许免费计划/查询，generate_images与submit_image_tasks的收费提交权限由使用者决定。App 或 Multica 可能由宿主管理运行时，不假定全局 `dsh.exe` 与其内置运行时版本相同。
 
-已有证据只覆盖实际 DSH CLI 的隔离 profile 工具桥接；三种完整 profile、Multica、GUI 与 Prompt/Resource 桥接均未在本轮实测。工具注册/发现不代表已完成绘图业务验证。
+历史证据只覆盖旧版本在实际DSH CLI的隔离profile工具桥接，没有在v0.2.2重新执行DSH验收；三种完整profile、Multica、GUI与Prompt/Resource桥接均未在本轮实测。工具注册/发现不代表已完成绘图业务验证。
 
 也可先临时加载补丁。PowerShell：
 
