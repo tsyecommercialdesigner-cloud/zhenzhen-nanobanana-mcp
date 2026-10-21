@@ -16,8 +16,15 @@ import httpx
 from PIL import Image, UnidentifiedImageError
 
 from .config import BusinessError
+from .limits import SAFE_ATTEMPTS, RETRY_DELAY
 
 MIB = 1024 * 1024
+
+
+class TransientDownloadError(BusinessError):
+    """A read-only GET failed transiently; retry never generates another image."""
+
+
 MAX_INPUT_BYTES = 20 * MIB
 MAX_OUTPUT_BYTES = 32 * MIB
 MAX_PIXELS = 64_000_000
@@ -151,12 +158,26 @@ class MediaLoader:
         roots: tuple[Path, ...],
         timeout: float,
         transport: httpx.AsyncBaseTransport | None = None,
+        safe_attempts: int = SAFE_ATTEMPTS,
+        retry_delay: float = RETRY_DELAY,
     ):
         # The former roots argument is accepted for compatibility, never used to restrict files.
         self.timeout = timeout
         self.transport = transport
+        self.safe_attempts, self.retry_delay = safe_attempts, retry_delay
 
     async def download(self, url: str, limit: int = MAX_OUTPUT_BYTES) -> bytes:
+        async with asyncio.timeout(self.timeout):
+            for attempt in range(self.safe_attempts):
+                try:
+                    return await self.download_once(url, limit)
+                except (httpx.HTTPError, TimeoutError, TransientDownloadError):
+                    if attempt + 1 == self.safe_attempts:
+                        raise
+                    await asyncio.sleep(self.retry_delay * 2**attempt)
+        raise BusinessError("图片下载未完成。")
+
+    async def download_once(self, url: str, limit: int) -> bytes:
         async with asyncio.timeout(self.timeout):
             async with httpx.AsyncClient(
                 trust_env=False, timeout=self.timeout, transport=self.transport
@@ -178,6 +199,10 @@ class MediaLoader:
                                 raise BusinessError("图片重定向缺少地址。")
                             url = urljoin(url, location)
                             continue
+                        if response.status_code in (429, 500, 502, 503, 504):
+                            raise TransientDownloadError(
+                                f"图片下载暂时失败（HTTP {response.status_code}）。"
+                            )
                         if response.status_code != 200:
                             raise BusinessError(f"图片下载失败（HTTP {response.status_code}）。")
                         return await bounded_read(response, limit)

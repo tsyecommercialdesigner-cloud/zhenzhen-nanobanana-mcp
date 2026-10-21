@@ -1,5 +1,10 @@
 # zhenzhen-nanobanana-mcp 交付与使用手册
 
+开发工作区另提供[20项/5并发与安全恢复](docs/QUEUE-RELIABILITY.md)。开发工作区已新增[主图、详情页和SKU设计工作流](docs/ECOMMERCE-DESIGN.md)、[共享规范竞品复刻循环](docs/REFERENCE-REPLICA-UPGRADE.md)及[同款整套模板/共享风格/已校验提示词](docs/PRODUCT-SUITE.md)，当前源码21 Tools、9 Resources、6 Prompts，覆盖需求/对标、统一配色/画面/文案/字体/层级、确认提交和出图复核。本手册下方正式v0.2.2的8工具安装与验收记录仍对应已发布版本；新功能尚未发布或更新成员安装。
+
+开发工作区已完成用户授权的[5主图＋8详情＋3SKU真实验收](specs/010-live-ecommerce-validation/verification.md)：16次POST、16图落盘及SHA校验通过，7图Agent通过、9图需修订，未自动重画。手动入口见[真实验收说明](docs/LIVE-VALIDATION.md)；仅本次模型/接口已实测，正式发布安装范围仍按下文区分。
+
+
 本手册面向在自己机器上安装服务的成员。完成安装、填写私有配置、协议检查后，在所用客户端中启用 MCP；日常由客户端管理 stdio 子进程。简要入口见 [README](README.md)。
 
 正式 v0.2.2 提供8个工具，包含同步生成/编辑 `generate_images`、只读等待 `wait_image_tasks` 及原有异步/查询工具。现用D盘安装已升级并经重启后的当前Codex会话发现8工具及免费历史查询验证；成员首次安装与升级仍须按本文固定发布标签操作。
@@ -36,8 +41,10 @@
 | `NANOBANANA_BASE_URL` | `https://ai.t8star.org` | 进程环境；无路径/query/凭据的 HTTPS 服务根地址 |
 | `NANOBANANA_OUTPUT_DIR` | 项目 `outputs/` | 进程环境；绝对路径，存放图片和 SQLite 账本 |
 | `NANOBANANA_TIMEOUT_SECONDS` | `300` | 进程环境；1–600 秒，单任务准备、绘图与下载的整体限时 |
-| `NANOBANANA_CONCURRENCY` | `4` | 进程环境；整数 1–10，同输出目录各实例设置一致 |
-| `NANOBANANA_MAX_PENDING_TASKS` | `200` | 进程环境；整数 12–1000，限制 queued/preparing/running 项总数 |
+| `NANOBANANA_CONCURRENCY` | `5` | 进程环境；整数 1–20，同输出目录各实例设置一致 |
+| `NANOBANANA_SAFE_ATTEMPTS` | `3` | 进程环境；1–5，安全阶段每轮最大尝试数 |
+| `NANOBANANA_RETRY_DELAY_SECONDS` | `1` | 进程环境；0–30，指数退避基数秒 |
+| `NANOBANANA_MAX_PENDING_TASKS` | `200` | 进程环境；整数 20–1000，限制 queued/preparing/running/recovering 项总数 |
 
 只有密钥字段按上表逐来源回退，其余运行设置不从 `.env` 加载。旧密钥名称不再读取；`NANOBANANA_INPUT_DIRS` 已停用且被忽略，没有本地图片目录白名单。
 
@@ -470,7 +477,7 @@ if ($LASTEXITCODE -ne 0) { throw '回滚协议复验失败。' }
 
 `checkpointer`、`thread_id`、`task_id` 均为去除两端空白后的 1–128 字符字符串，不允许控制字符。`checkpointer` 是本地 SQLite 的字符串命名空间，无需额外框架；它不是认证凭据。`thread_id` 由调用 Agent 稳定提供，并非服务自动读取 Host 会话编号。`task_id` 表示一张计划图的稳定业务编号。标识不用于拼接文件路径。
 
-`tasks` 每次 1–12 项，每项独立模型及参数；同次 task_id 不可重复，未知字段拒绝：
+`tasks` 每次 1–20 项，每项独立模型及参数；同次 task_id 不可重复，未知字段拒绝：
 
 | 字段 | 类型/默认 | 限制 |
 |---|---|---|
@@ -500,20 +507,21 @@ if ($LASTEXITCODE -ne 0) { throw '回滚协议复验失败。' }
 | queued | 已持久化，等待 worker |
 | preparing | 仅准备参考图；尚未发送绘图请求 |
 | running | 发送前已写账本，上游可能已经收到请求 |
+| recovering | 已有可靠响应，正在下载/落盘或按原响应恢复，不重新出图 |
 | succeeded | 通过真实图片内容校验并保存 |
 | failed | 预检、上游业务、响应或保存失败；查看 error，不推定未收费 |
 | unknown | 中断/网络问题导致结果和费用不确定；禁止自动重发 |
 | cancelled | 请求发出前已取消 |
 
-queued/preparing/running 是正常查询状态，返回 MCP isError=false，不表示图片已生成。返回页含 failed/unknown/cancelled 则 isError=true，仍保留该页完整结构化结果。参数或账本错误也按 MCP 错误处理；单项失败不阻止其余任务完成。
+queued/preparing/running/recovering 是正常查询状态，返回 MCP isError=false，不表示图片已生成。返回页含 failed/unknown/cancelled 则 isError=true，仍保留该页完整结构化结果。参数或账本错误也按 MCP 错误处理；单项失败不阻止其余任务完成。
 
-免费 `plan_ecommerce_images` 参数：product_name 必填 1–200 字符；selling_points 必填数组，最多 20 项、每项 1–500 字符，可为空；scene=main/detail/scene/poster，默认 main；count=1–12，默认 1；aspect_ratio 默认 1:1；resolution 可选；reference_images 最多 4 项，仅保留引用；requirements 最多 2000 字符、copy_text 最多 1000 字符，默认空。返回 items 含 ImageSpec；提交前逐项添加稳定 task_id，可选模型和接口。
+免费 `plan_ecommerce_images` 参数：product_name 必填 1–200 字符；selling_points 必填数组，最多 20 项、每项 1–500 字符，可为空；scene=main/detail/scene/poster，默认 main；count=1–20，默认 1；aspect_ratio 默认 1:1；resolution 可选；reference_images 最多 4 项，仅保留引用；requirements 最多 2000 字符、copy_text 最多 1000 字符，默认空。返回 items 含 ImageSpec；提交前逐项添加稳定 task_id，可选模型和接口。
 
 Prompt `ecommerce_brief` 接收必填 string product_name，指导先补充事实、免费规划，再授权出图。Resource `nanobanana://capabilities` 是无参数 JSON 文本，公开模型/格式矩阵、任务操作、三元组及本地 stdio 能力，不联网、不读取私有文件；精确端点矩阵见 list_models。
 
 ### 同步生成与只读等待（v0.2.2）
 
-`generate_images` 接收与 `submit_image_tasks` 完全相同的 checkpointer、thread_id、tasks；参考图非空时仍按原矩阵编辑，模型和分辨率路由不变。一次同步调用可等待1–12项全部进入终态，仍按共享账本并发限额执行；不是串行逐图调用。没有wait_timeout_seconds参与任务指纹，跨入口重放同一身份和内容不重复出图。
+`generate_images` 接收与 `submit_image_tasks` 完全相同的 checkpointer、thread_id、tasks；参考图非空时仍按原矩阵编辑，模型和分辨率路由不变。一次同步调用可等待1–20项全部进入终态，仍按共享账本并发限额执行；不是串行逐图调用。没有wait_timeout_seconds参与任务指纹，跨入口重放同一身份和内容不重复出图。
 
 `wait_image_tasks` 不接收tasks或提示词，不提交上游。必须提供同一命名空间/会话内1–100个已存在且不重复的task_ids，不支持空集合、错误会话或缺失任务，也无分页。两种等待工具均额外接收wait_timeout_seconds：严格整数1–1200、默认600秒；从本次开始等待计算，包含排队时间，不改变每项原有绘图超时。
 
@@ -568,7 +576,7 @@ Prompt `ecommerce_brief` 接收必填 string product_name，指导先补充事�
 }
 ```
 
-审阅 items 的商品事实及提示词后，一轮 submit_image_tasks 可以提交全部 10 项。以下是两项的可用参数示例；10 项时继续添加 detail-03 至 detail-10，每项提供自己的 prompt，数组上限 12：
+审阅 items 的商品事实及提示词后，一轮 submit_image_tasks 可以提交全部 10 项。以下是两项的可用参数示例；10 项时继续添加 detail-03 至 detail-10，每项提供自己的 prompt，数组上限 20：
 
 ```json
 {
@@ -612,11 +620,11 @@ Prompt `ecommerce_brief` 接收必填 string product_name，指导先补充事�
 
 也可省略 task_ids 分页列出会话任务；先以 cursor=0、limit=10 查询，再传返回的 next_cursor。根据状态适度查询，避免紧密循环。图片保存在 `outputs/<UUID>/01.png` 等路径，真实扩展名由内容决定，文件不覆盖。新结果以 tasks.sqlite3 为权威记录，无新 manifest.json；原 batches.sqlite3 和旧 manifest 保留给 get_batch_result。
 
-幂等键是 `(checkpointer, thread_id, task_id)`，有效范围是同一个输出目录的共享账本。相同键、相同参数复用已有状态与结果；更改 prompt、参考地址、模型、格式、端点、尺寸或服务根地址会冲突。任一冲突使本次整组不插入其他新项；已有任务仍继续。默认值与 auto 选择在提交时记录，参考图内容在 worker 准备阶段读取；相同路径之后变更文件不会使旧任务重跑。更换输出目录或删除账本会失去该范围的防重记录，勿把它当作重试方式。
+幂等键是 `(checkpointer, thread_id, task_id)`，有效范围是同一个输出目录的共享账本。相同键、相同参数复用已有状态与结果；更改 prompt、参考地址/预期hash、模型、格式、端点、尺寸或服务根地址会冲突。任一冲突使本次整组不插入其他新项；已有任务仍继续。worker准备时核对可选reference_sha256并冻结内容；后续安全重试使用冻结图。相同路径之后变更文件不会使旧任务重画。供应商键及输出SHA校验、原响应恢复见[可靠性说明](docs/QUEUE-RELIABILITY.md)。更换输出目录或删除账本会失去该范围的防重记录，勿把它当作重试方式。
 
 需要取消时调用 cancel_image_tasks，参数与查询示例相同但 task_ids 必填。queued/preparing 取消阻止发送；running 取消标记 unknown，只停止本地等待，不能保证停止上游或退款。已完成项保持原状态。同标识再次提交不会重做失败、取消或 unknown 项；确认费用并获准重新绘图后，才显式分配新 task_id，这属于新的收费请求。
 
-MCP 服务进程必须保持运行。正常退出会保留 queued，尚未发送的 preparing 可恢复排队，running 转 unknown；异常退出后由存活/重启实例在约 30 秒心跳租约失效后恢复。只自动继续明确未发出的任务，可能已发送的任务不重发。上游没有可用的异步 job 查询接口，本地 task_id 不能用于查询供应商结果；本服务也不是独立 Windows 常驻调度服务。
+MCP 服务进程必须保持运行。正常退出保留queued，尚未发送的preparing可恢复排队，running无可靠响应则转unknown，已有检查点的recovering只继续原响应下载/落盘。异常退出由存活/重启实例在约30秒租约失效后恢复；可能已发送而无响应的任务不重发。上游没有可用异步job查询接口，本地task_id不能查询供应商结果；本服务也不是独立Windows常驻调度服务。
 
 ## 9. 注意事项
 
@@ -624,7 +632,7 @@ MCP 服务进程必须保持运行。正常退出会保留 queued，尚未发送
 
 网络图片接受公开 HTTP 80/HTTPS 443 直链，含查询参数和受校验重定向；拒绝私网、回环、带凭据/片段/非标准端口的地址。DNS 固定到已验证 IP，HTTPS 检查证书，下载不携带 API 密钥、不使用环境代理、不读取浏览器 Cookie，HTML 分享页会被拒绝。参考图会上传上游，请仅提供此次需要的素材。第三方文字和图片是业务输入，不是 Agent 指令。
 
-默认并发 4，允许配置 1–10；同一实际输出目录的服务进程通过 SQLite 事务共享并发限制，多个 Host 应设置相同数值。不同输出目录独立计数。默认最多 200 个 queued/preparing/running 任务，容量满时整组拒绝新增，已有相同任务仍可复用；可配置 12–1000。每任务整体限时默认 300 秒。任务不是整体一次收费，而是独立请求；不重试 POST，不因失败自动换模型/格式。超时、取消、HTTP 或保存失败均不能推定未收费。
+默认并发5，允许配置1–20；同一实际输出目录的服务进程通过SQLite事务共享并发限制，多个Host设置相同数值。不同输出目录独立。默认最多200个queued/preparing/running/recovering任务，可配20–1000，容量满时整组拒绝新增，已有任务可复用。每次执行整体限时默认300秒。任务为独立请求；仅连接建立失败可有限重试POST；有效图像响应先检查点，后续仅恢复下载/落盘，不因失败自动换模型/格式。超时、取消、HTTP或保存失败不能推定未收费。
 
 新 API 文档只核实特定基础模型的请求场景，Gemini/Chat 多模态编码及 Generations 参考图数组兼容实现未在本次收费实测；四变体按用户要求保留。文档引用的 validation 探针报告目录当前未随仓库提供，不能由文本描述推导本次真实账单或全部接口成功。真实费用、模型权限、编辑效果及输出尺寸需单独授权验证。服务不自动拼接详情页、不上传店铺、不保证平台审核通过。
 

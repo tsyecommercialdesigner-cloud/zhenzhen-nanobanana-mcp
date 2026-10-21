@@ -29,7 +29,8 @@ foreach ($bad in @(@('file.txt','file.txt'), @('../file.txt'), @('missing.txt'),
 $Target = Join-Path $Fixture 'target'
 New-Item -ItemType Directory -Path $Target | Out-Null
 [IO.File]::WriteAllText((Join-Path $Target 'file.txt'), 'public')
-New-Item -ItemType Junction -Path (Join-Path $Fixture 'link') -Target $Target | Out-Null
+$LinkType = if ($IsWindows) { 'Junction' } else { 'SymbolicLink' }
+New-Item -ItemType $LinkType -Path (Join-Path $Fixture 'link') -Target $Target | Out-Null
 $rejected = $false
 try { Resolve-DeliveryFiles -ProjectDir $Fixture -Whitelist @('link/file.txt') | Out-Null }
 catch { $rejected = $true }

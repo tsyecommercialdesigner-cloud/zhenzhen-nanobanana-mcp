@@ -20,6 +20,19 @@ TOOLS = {
     "get_image_tasks",
     "cancel_image_tasks",
     "get_batch_result",
+    "retry_image_tasks",
+    "inspect_design_images",
+    "plan_ecommerce_design",
+    "confirm_ecommerce_design",
+    "submit_ecommerce_design",
+    "get_ecommerce_design",
+    "plan_reference_replica",
+    "export_reference_replica",
+    "review_reference_replica",
+    "build_product_suite_prompts",
+    "export_product_suite_prompts",
+    "build_reference_replica_prompts",
+    "export_validated_reference_replica",
 }
 
 
@@ -86,7 +99,7 @@ async def check(mode: str, temporary: Path):
         )
         assert invalid_wait.is_error
         submit_tool = next(tool for tool in tools if tool.name == "submit_image_tasks")
-        assert submit_tool.input_schema["properties"]["tasks"]["maxItems"] == 12
+        assert submit_tool.input_schema["properties"]["tasks"]["maxItems"] == 20
         assert catalog.structured_content["capabilities"]["nano-banana-pro"] == ["dalle"]
         assert catalog.structured_content["supported_endpoints"]["gemini-nano-banana-2.1"] == [
             "generations"
@@ -106,6 +119,27 @@ async def check(mode: str, temporary: Path):
             item["resolution"] == {"width": 1536, "height": 2048}
             for item in plan.structured_content["items"]
         )
+        design = await client.call_tool(
+            "plan_ecommerce_design",
+            {"design_id": "smoke-design", "brief": {"kind": "sku", "product_name": "收纳篮"}},
+        )
+        assert design.structured_content["status"] == "needs_input"
+        assert design.structured_content["questions"]
+        assert design.structured_content["panels"] == []
+        saved_design = await client.call_tool("get_ecommerce_design", {"design_id": "smoke-design"})
+        assert saved_design.structured_content["tasks"] == []
+        not_confirmed = await client.call_tool(
+            "confirm_ecommerce_design",
+            {
+                "design_id": "smoke-design",
+                "revision": design.structured_content["revision"],
+                "digest": design.structured_content["digest"],
+                "confirmation_note": "不得确认不完整底稿",
+                "user_confirmed": True,
+            },
+            raise_on_error=False,
+        )
+        assert not_confirmed.is_error
         for resolution in ({"width": 0, "height": 1}, {"width": "2048", "height": 1}):
             invalid_resolution = await client.call_tool(
                 "submit_image_tasks",
@@ -162,8 +196,41 @@ async def check(mode: str, temporary: Path):
             "get_image_tasks", {"checkpointer": "smoke", "thread_id": "validation"}
         )
         assert empty.structured_content["tasks"] == []
-        assert len(await client.list_prompts()) == 1
-        assert len(await client.list_resources()) == 1
+        assert {p.name for p in await client.list_prompts()} == {
+            "ecommerce_brief",
+            "reference_replication_brief",
+            "product_suite_brief",
+            "product_suite_review",
+            "reference_replica_brief",
+            "reference_replica_review",
+        }
+        assert {str(r.uri) for r in await client.list_resources()} == {
+            "nanobanana://capabilities",
+            "nanobanana://reference-replication",
+            "nanobanana://templates/product-suite",
+            "nanobanana://templates/styles",
+            "nanobanana://templates/main",
+            "nanobanana://templates/detail",
+            "nanobanana://templates/sku",
+            "nanobanana://templates/reference-replica",
+            "nanobanana://templates/reference-analysis",
+        }
+        suite_templates = await client.read_resource("nanobanana://templates/product-suite")
+        assert "ProductSuiteSpec" in suite_templates[0].text
+        suite_prompt = await client.get_prompt("product_suite_brief", {"product_name": "收纳篮"})
+        assert suite_prompt.messages
+        reference_templates = await client.read_resource("nanobanana://templates/reference-replica")
+        assert "ReferenceReplicaSpec" in reference_templates[0].text
+        reference_prompt = await client.get_prompt(
+            "reference_replica_brief", {"product_name": "收纳篮", "target_category": "家居收纳"}
+        )
+        assert reference_prompt.messages
+        replica_workflow = await client.read_resource("nanobanana://reference-replication")
+        assert "iterate_or_stop" in replica_workflow[0].text
+        replica_prompt = await client.get_prompt(
+            "reference_replication_brief", {"product_name": "收纳篮", "target_category": "家居收纳"}
+        )
+        assert replica_prompt.messages
         resource = await client.read_resource("nanobanana://capabilities")
         assert "gemini-nano-banana-2.1" in resource[0].text
         prompt = await client.get_prompt("ecommerce_brief", {"product_name": "收纳篮"})
@@ -172,8 +239,8 @@ async def check(mode: str, temporary: Path):
             "mode": mode,
             "protocol": client.session.protocol_version,
             "tools": sorted(TOOLS),
-            "prompts": 1,
-            "resources": 1,
+            "prompts": 6,
+            "resources": 9,
             "business_network_calls": 0,
             "isolated_project_env": True,
         }

@@ -1,0 +1,11 @@
+# 实施方案
+
+在DesignBrief中增加可选ProductSuiteSpec，不改旧方案/旧任务的执行语义。新ProductSuiteBrief要求整套规范，生成1–8张主图、8–15屏详情、每SKU一张（最多48）；单类图片继续原工具。用一份style替代逐图自由风格；模板只管信息目的和构图，模板v1保持稳定，后续更改应升版本并重新确认。
+
+suite_models定义SuitePalette、SuiteTypography、SuiteHierarchy、SuiteCopyStyle、SuiteStyle、SuiteCanvas、SuiteFrame、ProductSuiteSpec、DrawingPrompt、CompiledSuitePrompt；Contract默认禁止未知字段。颜色统一大写HEX，层级满足标题>副标题>正文，数值必须有限，商品尺度与边距不能超画布。帧仅含语义内容，不接受逐图style。事实和SKU关联在Brief跨字段校验，模板证据与术语在编译前验证。
+
+suite_templates提供12版式、3共享预设和5静态JSON Resources，suite_tools增加规划/复核2 Prompts及免费构造/只读导出2 Tools。suite.py把已校验中间结构确定性编译为Markdown，并通过ImageTask验证长度/执行参数。整套颜色/字体/层级区块相同，SKU实图各自绑定、属性顺序按首SKU规范化。任务画幅取suite.canvases，分辨率缺省继承brief.resolution，再根据实际矩阵选模型档位和端点。
+
+DesignService同时冻结商品主图及所有SKU图片，摘要包含完整suite与模板版本。任务构造时重新校验持久方案并检查展示面板一致，拒绝普通edits，提交只接收已确认版本+图片ID，实际编译器与导出相同。整套只使用suite.style，旧brief.style是单类流程字段。复刻观察结果可通过benchmarks迁移到共享规范，不与独立replica.frames双重定义。
+
+扩展专项测试、真实stdio发现、JSON schema契约与隔离安装；执行现有11项检查。维持SQLite、既有20项/5并发/200队列，不新增数据库或外部LLM依赖，不触发真实费用。

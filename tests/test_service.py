@@ -81,7 +81,8 @@ class Base(unittest.IsolatedAsyncioTestCase):
             while True:
                 page = queue.get("cp", "thread")
                 if len(page.tasks) == count and all(
-                    task.status not in ("queued", "preparing", "running") for task in page.tasks
+                    task.status not in ("queued", "preparing", "running", "recovering")
+                    for task in page.tasks
                 ):
                     return page
                 await asyncio.sleep(0.02)
@@ -676,7 +677,8 @@ class SafetyTests(Base):
         script.write_text(
             "param([string]$Link,[string]$Target)\n"
             "$ErrorActionPreference='Stop'\n"
-            "New-Item -ItemType Junction -Path $Link -Target $Target | Out-Null\n",
+            "$LinkType = if ($IsWindows) { 'Junction' } else { 'SymbolicLink' }\n"
+            "New-Item -ItemType $LinkType -Path $Link -Target $Target | Out-Null\n",
             encoding="utf-8",
         )
         command = [

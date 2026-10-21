@@ -9,6 +9,14 @@ from urllib.parse import urlsplit
 
 from dotenv.parser import parse_stream
 
+from .limits import (
+    DEFAULT_CONCURRENCY,
+    MAX_BATCH_ITEMS,
+    MAX_CONCURRENCY,
+    RETRY_DELAY,
+    SAFE_ATTEMPTS,
+)
+
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 API_KEY_FIELD = "ZHENZHEN_NANOBANANA_API_KEY"
 
@@ -111,8 +119,10 @@ class Settings:
     input_dirs: tuple[Path, ...] = ()  # Deprecated compatibility field; no access restriction.
     output_dir: Path = PROJECT_ROOT / "outputs"
     timeout: float = 300
-    concurrency: int = 4
+    concurrency: int = DEFAULT_CONCURRENCY
     max_pending_tasks: int = 200
+    safe_attempts: int = SAFE_ATTEMPTS
+    retry_delay: float = RETRY_DELAY
     project_dir: Path = PROJECT_ROOT
 
     def __post_init__(self):
@@ -127,10 +137,12 @@ class Settings:
             or url.path not in ("", "/")
         ):
             raise BusinessError("NANOBANANA_BASE_URL 必须是无路径/凭据的 HTTPS 服务根地址。")
-        if not 1 <= self.timeout <= 600 or not 1 <= self.concurrency <= 10:
-            raise BusinessError("TIMEOUT_SECONDS 必须在 1–600 内，CONCURRENCY 必须在 1–10 内。")
-        if not 12 <= self.max_pending_tasks <= 1000:
-            raise BusinessError("MAX_PENDING_TASKS 必须在 12–1000 内。")
+        if not 1 <= self.timeout <= 600 or not 1 <= self.concurrency <= MAX_CONCURRENCY:
+            raise BusinessError("TIMEOUT_SECONDS 必须在 1–600 内，CONCURRENCY 必须在 1–20 内。")
+        if not MAX_BATCH_ITEMS <= self.max_pending_tasks <= 1000:
+            raise BusinessError("MAX_PENDING_TASKS 必须在 20–1000 内。")
+        if not 1 <= self.safe_attempts <= 5 or not 0 <= self.retry_delay <= 30:
+            raise BusinessError("SAFE_ATTEMPTS必须在1–5内，RETRY_DELAY_SECONDS必须在0–30内。")
         if not self.output_dir.is_absolute():
             raise BusinessError("输出目录必须为绝对路径。")
 
@@ -146,8 +158,12 @@ class Settings:
                     os.environ.get("NANOBANANA_OUTPUT_DIR", str(project_dir / "outputs"))
                 ),
                 timeout=float(os.environ.get("NANOBANANA_TIMEOUT_SECONDS", "300")),
-                concurrency=int(os.environ.get("NANOBANANA_CONCURRENCY", "4")),
+                concurrency=int(os.environ.get("NANOBANANA_CONCURRENCY", str(DEFAULT_CONCURRENCY))),
                 max_pending_tasks=int(os.environ.get("NANOBANANA_MAX_PENDING_TASKS", "200")),
+                safe_attempts=int(os.environ.get("NANOBANANA_SAFE_ATTEMPTS", str(SAFE_ATTEMPTS))),
+                retry_delay=float(
+                    os.environ.get("NANOBANANA_RETRY_DELAY_SECONDS", str(RETRY_DELAY))
+                ),
                 project_dir=project_dir,
             )
         except (ValueError, OverflowError) as exc:

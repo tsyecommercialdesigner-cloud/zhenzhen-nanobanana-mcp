@@ -1,0 +1,396 @@
+{
+  "design_id": "basket-reference-demo",
+  "expected_revision": 0,
+  "brief": {
+    "product_name": "收纳篮",
+    "platform": "用户指定的测试平台",
+    "audience": "需要桌面收纳的用户",
+    "objective": "展示用途、材质与规格差异",
+    "product_images": [
+      "/absolute/path/blue-basket.png"
+    ],
+    "visual_observations": "蓝色圆篮、织纹表面",
+    "reference_choice": "provided",
+    "reference_reason": "",
+    "facts": [
+      {
+        "fact_id": "usage",
+        "label": "桌面收纳",
+        "value": "收纳桌面小物",
+        "source": "用户核实",
+        "category": "usage"
+      },
+      {
+        "fact_id": "material",
+        "label": "棉麻材质",
+        "value": "棉麻",
+        "source": "用户商品资料",
+        "category": "material"
+      }
+    ],
+    "variants": [
+      {
+        "sku_id": "blue",
+        "label": "蓝色款",
+        "attributes": {
+          "颜色": "蓝色",
+          "材质": "棉麻"
+        },
+        "product_images": [
+          "/absolute/path/blue-basket.png"
+        ],
+        "fact_ids": [
+          "usage",
+          "material"
+        ]
+      },
+      {
+        "sku_id": "red",
+        "label": "红色款",
+        "attributes": {
+          "材质": "棉麻",
+          "颜色": "红色"
+        },
+        "product_images": [
+          "/absolute/path/red-basket.png"
+        ],
+        "visual_observations": "红色圆篮，织纹表面",
+        "fact_ids": [
+          "usage"
+        ]
+      }
+    ],
+    "kind": "main",
+    "reference_replica": {
+      "scope": "product_suite",
+      "reference_image": "/absolute/path/competitor.png",
+      "source_category": "家居花瓶",
+      "target_category": "家居收纳",
+      "analysis": {
+        "visual_schema": {
+          "aesthetic_style": "温暖、克制、材质真实的电商摄影",
+          "graphics_structure": "上方短标题、中央产品、底部标签",
+          "product_representation": "展示产品真实比例与表面纹理，不改变实际配件"
+        },
+        "scene": {
+          "color_palette": "米色背景和柔和金色点缀",
+          "optical_vibe": "左上方柔和自然光，保留接触阴影",
+          "rendering_details": "表面纹理清晰、自然景深，不虚构内部剖面"
+        },
+        "layout": {
+          "objects_composition": "产品居中，留白约三成",
+          "text_arrangement": "深色粗标题在上，浅色短副标题紧随其下",
+          "object_interaction": "道具与商品保持真实接触，不遮挡主体"
+        },
+        "copywriting_style": "利益点短句；源图出现竞品销量99999，仅记录不迁移",
+        "information_order": "先主体，后卖点，再行动提示",
+        "observational_limits": [
+          "示例中源字族无法确认，目标采用明确替代；真实业务需要观察实际参考后填写"
+        ]
+      },
+      "adaptations": [
+        {
+          "dimension": "商品表现",
+          "action": "adapt",
+          "reference_observation": "源图展示花瓶",
+          "target_decision": "用收纳篮实物和真实收纳用途替代花瓶",
+          "reason": "适应目标商品结构与购买顾虑"
+        },
+        {
+          "dimension": "颜色与字族",
+          "action": "adapt",
+          "reference_observation": "参考为米色和柔和金色，源图具体字族无法确认",
+          "target_decision": "延续暖色浅背景，使用棕色文字与少量暖色点缀；改用统一Noto Sans CJK SC，保留实际商品颜色",
+          "reason": "在延续温暖观感的同时确保文本清楚并明确替代字族；示例方案需用户重新确认"
+        }
+      ],
+      "style": {
+        "palette": {
+          "primary": "#805638",
+          "secondary": "#F0E2D2",
+          "accent": "#9D4934",
+          "background": "#FFF9F0",
+          "text": "#38271F",
+          "usage": "背景用background，标题与标签用primary，正文用text，强调仅少量accent；不改变商品固有颜色。"
+        },
+        "typography": {
+          "font_family": "Noto Sans CJK SC",
+          "fallback_families": [
+            "思源黑体",
+            "sans-serif"
+          ],
+          "title_weight": 700,
+          "subtitle_weight": 500,
+          "body_weight": 400,
+          "alignment": "left",
+          "font_rights_note": "发布前核实所用实际字体的授权；模型生成字形仍需人工检查。"
+        },
+        "hierarchy": {
+          "title_pct": 5.0,
+          "subtitle_pct": 3.2,
+          "body_pct": 2.4,
+          "safe_margin_pct": 5.0,
+          "product_scale_pct": 65.0,
+          "title_area_pct": 20.0,
+          "spacing_unit_pct": 2.0
+        },
+        "copywriting": {
+          "tone": "亲切简洁，描述真实生活用途，不夸大效果。",
+          "sentence_pattern": "短标题聚焦一个信息点，副标题解释用途，正文只补充有依据的细节。",
+          "terminology": {},
+          "forbidden_terms": []
+        },
+        "aesthetic": "温暖自然的生活场景产品摄影，低干扰布景和真实材质。",
+        "lighting": "统一柔和暖光，保留真实产品颜色和接触阴影。",
+        "background": "干净低干扰的背景，同组使用一致的纹理语言。",
+        "rendering": "保留实物细节，避免塑料化、畸变和过度锐化。"
+      },
+      "frames": [
+        {
+          "panel_id": "main",
+          "kind": "main",
+          "template_id": "main.hero",
+          "purpose": "说明真实用途",
+          "title": "桌面收纳",
+          "subtitle": "收纳桌面小物",
+          "visual": "展示实物正面与侧面纹理",
+          "fact_ids": [
+            "usage"
+          ],
+          "composition": {
+            "graphics_structure": "上方短标题、中间产品、下方真实说明，继承参考的疏密节奏",
+            "product_representation": "以本商品实图的真实外形和织纹取代源参考花瓶",
+            "layout": {
+              "objects_composition": "产品居中，留白约三成",
+              "text_arrangement": "深色粗标题在上，浅色短副标题紧随其下",
+              "object_interaction": "道具与商品保持真实接触，不遮挡主体"
+            }
+          }
+        },
+        {
+          "panel_id": "d0",
+          "kind": "detail",
+          "template_id": "detail.opening",
+          "purpose": "说明真实用途",
+          "title": "桌面收纳",
+          "subtitle": "收纳桌面小物",
+          "visual": "展示实物正面与侧面纹理",
+          "fact_ids": [
+            "usage"
+          ],
+          "composition": {
+            "graphics_structure": "上方短标题、中间产品、下方真实说明，继承参考的疏密节奏",
+            "product_representation": "以本商品实图的真实外形和织纹取代源参考花瓶",
+            "layout": {
+              "objects_composition": "产品居中，留白约三成",
+              "text_arrangement": "深色粗标题在上，浅色短副标题紧随其下",
+              "object_interaction": "道具与商品保持真实接触，不遮挡主体"
+            }
+          }
+        },
+        {
+          "panel_id": "d1",
+          "kind": "detail",
+          "template_id": "detail.solution",
+          "purpose": "说明真实用途",
+          "title": "桌面收纳",
+          "subtitle": "收纳桌面小物",
+          "visual": "展示实物正面与侧面纹理",
+          "fact_ids": [
+            "usage"
+          ],
+          "composition": {
+            "graphics_structure": "上方短标题、中间产品、下方真实说明，继承参考的疏密节奏",
+            "product_representation": "以本商品实图的真实外形和织纹取代源参考花瓶",
+            "layout": {
+              "objects_composition": "产品居中，留白约三成",
+              "text_arrangement": "深色粗标题在上，浅色短副标题紧随其下",
+              "object_interaction": "道具与商品保持真实接触，不遮挡主体"
+            }
+          }
+        },
+        {
+          "panel_id": "d2",
+          "kind": "detail",
+          "template_id": "detail.feature",
+          "purpose": "说明真实用途",
+          "title": "桌面收纳",
+          "subtitle": "收纳桌面小物",
+          "visual": "展示实物正面与侧面纹理",
+          "fact_ids": [
+            "usage"
+          ],
+          "composition": {
+            "graphics_structure": "上方短标题、中间产品、下方真实说明，继承参考的疏密节奏",
+            "product_representation": "以本商品实图的真实外形和织纹取代源参考花瓶",
+            "layout": {
+              "objects_composition": "产品居中，留白约三成",
+              "text_arrangement": "深色粗标题在上，浅色短副标题紧随其下",
+              "object_interaction": "道具与商品保持真实接触，不遮挡主体"
+            }
+          }
+        },
+        {
+          "panel_id": "d3",
+          "kind": "detail",
+          "template_id": "detail.material",
+          "purpose": "说明真实用途",
+          "title": "桌面收纳",
+          "subtitle": "收纳桌面小物",
+          "visual": "展示实物正面与侧面纹理",
+          "fact_ids": [
+            "material"
+          ],
+          "composition": {
+            "graphics_structure": "上方短标题、中间产品、下方真实说明，继承参考的疏密节奏",
+            "product_representation": "以本商品实图的真实外形和织纹取代源参考花瓶",
+            "layout": {
+              "objects_composition": "产品居中，留白约三成",
+              "text_arrangement": "深色粗标题在上，浅色短副标题紧随其下",
+              "object_interaction": "道具与商品保持真实接触，不遮挡主体"
+            }
+          }
+        },
+        {
+          "panel_id": "d4",
+          "kind": "detail",
+          "template_id": "detail.usage",
+          "purpose": "说明真实用途",
+          "title": "桌面收纳",
+          "subtitle": "收纳桌面小物",
+          "visual": "展示实物正面与侧面纹理",
+          "fact_ids": [
+            "usage"
+          ],
+          "composition": {
+            "graphics_structure": "上方短标题、中间产品、下方真实说明，继承参考的疏密节奏",
+            "product_representation": "以本商品实图的真实外形和织纹取代源参考花瓶",
+            "layout": {
+              "objects_composition": "产品居中，留白约三成",
+              "text_arrangement": "深色粗标题在上，浅色短副标题紧随其下",
+              "object_interaction": "道具与商品保持真实接触，不遮挡主体"
+            }
+          }
+        },
+        {
+          "panel_id": "d5",
+          "kind": "detail",
+          "template_id": "detail.feature",
+          "purpose": "说明真实用途",
+          "title": "桌面收纳",
+          "subtitle": "收纳桌面小物",
+          "visual": "展示实物正面与侧面纹理",
+          "fact_ids": [
+            "usage"
+          ],
+          "composition": {
+            "graphics_structure": "上方短标题、中间产品、下方真实说明，继承参考的疏密节奏",
+            "product_representation": "以本商品实图的真实外形和织纹取代源参考花瓶",
+            "layout": {
+              "objects_composition": "产品居中，留白约三成",
+              "text_arrangement": "深色粗标题在上，浅色短副标题紧随其下",
+              "object_interaction": "道具与商品保持真实接触，不遮挡主体"
+            }
+          }
+        },
+        {
+          "panel_id": "d6",
+          "kind": "detail",
+          "template_id": "detail.proof",
+          "purpose": "说明真实用途",
+          "title": "桌面收纳",
+          "subtitle": "收纳桌面小物",
+          "visual": "展示实物正面与侧面纹理",
+          "fact_ids": [
+            "usage"
+          ],
+          "composition": {
+            "graphics_structure": "上方短标题、中间产品、下方真实说明，继承参考的疏密节奏",
+            "product_representation": "以本商品实图的真实外形和织纹取代源参考花瓶",
+            "layout": {
+              "objects_composition": "产品居中，留白约三成",
+              "text_arrangement": "深色粗标题在上，浅色短副标题紧随其下",
+              "object_interaction": "道具与商品保持真实接触，不遮挡主体"
+            }
+          }
+        },
+        {
+          "panel_id": "d7",
+          "kind": "detail",
+          "template_id": "detail.closing",
+          "purpose": "说明真实用途",
+          "title": "桌面收纳",
+          "subtitle": "收纳桌面小物",
+          "visual": "展示实物正面与侧面纹理",
+          "fact_ids": [
+            "usage"
+          ],
+          "composition": {
+            "graphics_structure": "上方短标题、中间产品、下方真实说明，继承参考的疏密节奏",
+            "product_representation": "以本商品实图的真实外形和织纹取代源参考花瓶",
+            "layout": {
+              "objects_composition": "产品居中，留白约三成",
+              "text_arrangement": "深色粗标题在上，浅色短副标题紧随其下",
+              "object_interaction": "道具与商品保持真实接触，不遮挡主体"
+            }
+          }
+        },
+        {
+          "panel_id": "blue",
+          "kind": "sku",
+          "template_id": "sku.variant",
+          "purpose": "说明真实用途",
+          "title": "蓝色款",
+          "subtitle": "收纳桌面小物",
+          "visual": "展示实物正面与侧面纹理",
+          "fact_ids": [
+            "usage"
+          ],
+          "sku_id": "blue",
+          "composition": {
+            "graphics_structure": "上方短标题、中间产品、下方真实说明，继承参考的疏密节奏",
+            "product_representation": "以本商品实图的真实外形和织纹取代源参考花瓶",
+            "layout": {
+              "objects_composition": "产品居中，留白约三成",
+              "text_arrangement": "深色粗标题在上，浅色短副标题紧随其下",
+              "object_interaction": "道具与商品保持真实接触，不遮挡主体"
+            }
+          }
+        },
+        {
+          "panel_id": "red",
+          "kind": "sku",
+          "template_id": "sku.variant",
+          "purpose": "说明真实用途",
+          "title": "红色款",
+          "subtitle": "收纳桌面小物",
+          "visual": "展示实物正面与侧面纹理",
+          "fact_ids": [
+            "usage"
+          ],
+          "sku_id": "red",
+          "composition": {
+            "graphics_structure": "上方短标题、中间产品、下方真实说明，继承参考的疏密节奏",
+            "product_representation": "以本商品实图的真实外形和织纹取代源参考花瓶",
+            "layout": {
+              "objects_composition": "产品居中，留白约三成",
+              "text_arrangement": "深色粗标题在上，浅色短副标题紧随其下",
+              "object_interaction": "道具与商品保持真实接触，不遮挡主体"
+            }
+          }
+        }
+      ]
+    },
+    "benchmarks": [
+      {
+        "source": "用户实图",
+        "visual_focus": "商品为主",
+        "hierarchy": "先图后文",
+        "copy_approach": "短句",
+        "strengths": "留白",
+        "weaknesses": "细字难辨",
+        "adaptation": "按共享规范和目标构图迁移"
+      }
+    ]
+  }
+}

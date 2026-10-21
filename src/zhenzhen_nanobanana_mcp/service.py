@@ -22,6 +22,7 @@ from .models import (
     route_model,
 )
 from .provider import Provider
+from .limits import MAX_BATCH_ITEMS
 
 
 class BatchService:
@@ -32,7 +33,12 @@ class BatchService:
         loader: MediaLoader | None = None,
     ):
         self.settings = settings
-        self.loader = loader or MediaLoader(settings.input_dirs, settings.timeout)
+        self.loader = loader or MediaLoader(
+            settings.input_dirs,
+            settings.timeout,
+            safe_attempts=settings.safe_attempts,
+            retry_delay=settings.retry_delay,
+        )
         self.provider = provider or Provider(settings, self.loader)
         self.semaphore = asyncio.Semaphore(settings.concurrency)
         self.root = settings.output_dir.resolve()
@@ -122,8 +128,8 @@ class BatchService:
         api_format: ApiFormat,
         progress=None,
     ) -> BatchResult:
-        if not 1 <= len(specs) <= 12:
-            raise BusinessError("批次必须有 1–12 项。")
+        if not 1 <= len(specs) <= MAX_BATCH_ITEMS:
+            raise BusinessError("批次必须有 1–20 项。")
         canonical = json.dumps(
             {
                 "items": [s.model_dump(exclude_none=True) for s in specs],

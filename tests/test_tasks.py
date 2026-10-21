@@ -46,7 +46,8 @@ class TaskTests(unittest.IsolatedAsyncioTestCase):
             while True:
                 page = queue.get(*scope)
                 if len(page.tasks) == count and all(
-                    t.status not in ("queued", "preparing", "running") for t in page.tasks
+                    t.status not in ("queued", "preparing", "running", "recovering")
+                    for t in page.tasks
                 ):
                     return page
                 await asyncio.sleep(0.02)
@@ -286,8 +287,8 @@ class TaskTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(self.queue.storage.provider.render.await_count, 1)
 
     async def test_pagination_capacity_and_invalid_combinations_are_atomic(self):
-        self.queue.settings = replace(self.settings, max_pending_tasks=12)
-        await self.queue.submit("cp", "thread", [self.task(str(i)) for i in range(12)])
+        self.queue.settings = replace(self.settings, max_pending_tasks=20)
+        await self.queue.submit("cp", "thread", [self.task(str(i)) for i in range(20)])
         with self.assertRaises(BusinessError):
             await self.queue.submit("cp", "thread", [self.task("overflow")])
         page = self.queue.get("cp", "thread", limit=5)
@@ -300,7 +301,7 @@ class TaskTests(unittest.IsolatedAsyncioTestCase):
                 [self.task("ok"), self.task("bad", model="nano-banana-pro", api_format="chat")],
             )
         self.assertEqual(self.queue.get("cp", "invalid").tasks, [])
-        self.queue.cancel("cp", "thread", [str(i) for i in range(12)])
+        self.queue.cancel("cp", "thread", [str(i) for i in range(20)])
         self.queue.storage.provider.render.assert_not_awaited()
 
     async def test_mcp_business_error_schema_and_invalid_inputs(self):

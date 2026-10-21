@@ -1,5 +1,6 @@
 """Provider adapters: never retry a potentially billable request."""
 
+import asyncio
 import json
 import re
 from typing import Any
@@ -9,6 +10,10 @@ import httpx
 from .config import BusinessError, Settings
 from .media import MIB, Media, MediaLoader, bounded_read, decode_b64, decode_image
 from .models import ApiFormat, ImageSpec, ModelName, resolve_api
+
+
+class SafeConnectFailure(BusinessError):
+    """All attempts failed during connection establishment, before a POST was sent."""
 
 
 def image_sources(payload: dict, api_format: ApiFormat) -> list[str]:
@@ -70,6 +75,9 @@ class Provider:
         except ValueError as exc:
             raise BusinessError(str(exc)) from exc
         headers = {"Authorization": f"Bearer {self.settings.api_key}", "Accept": "application/json"}
+        key = getattr(spec, "_provider_key", "")
+        if key:
+            headers["Idempotency-Key"] = key
         args: dict[str, Any]
         if api_format == "dalle":
             body: dict[str, Any] = {
@@ -121,12 +129,26 @@ class Provider:
         async with httpx.AsyncClient(
             timeout=self.settings.timeout, trust_env=False, transport=self.transport
         ) as client:
-            async with client.stream(
-                "POST", self.settings.base_url + path, headers=headers, **args
-            ) as response:
-                if response.status_code != 200:
-                    raise BusinessError(f"绘图接口返回 HTTP {response.status_code}；未自动重试。")
-                raw = await bounded_read(response, 80 * MIB)
+            for attempt in range(self.settings.safe_attempts):
+                notify = getattr(spec, "_on_post_attempt", None)
+                if notify:
+                    notify()
+                try:
+                    async with client.stream(
+                        "POST", self.settings.base_url + path, headers=headers, **args
+                    ) as response:
+                        if response.status_code != 200:
+                            raise BusinessError(
+                                f"绘图接口返回 HTTP {response.status_code}；未自动重试。"
+                            )
+                        raw = await bounded_read(response, 80 * MIB)
+                    break
+                except (httpx.ConnectError, httpx.ConnectTimeout):
+                    if attempt + 1 == self.settings.safe_attempts:
+                        raise SafeConnectFailure(
+                            "建立连接失败，确认未发送绘图请求；可按原幂等键安全重试。"
+                        ) from None
+                    await asyncio.sleep(self.settings.retry_delay * 2**attempt)
         try:
             payload = json.loads(raw)
             if not isinstance(payload, dict) or payload.get("error"):
@@ -134,6 +156,13 @@ class Provider:
             sources = image_sources(payload, api_format)
         except (ValueError, AttributeError, TypeError, KeyError) as exc:
             raise BusinessError("绘图接口响应结构无效。") from exc
+        checkpoint = getattr(spec, "_on_response", None)
+        if checkpoint:
+            checkpoint(sources)
+        return await self.collect(sources)
+
+    async def collect(self, sources: list[str]) -> list[Media]:
+        """Replay an existing response using GET/decoding only, without a billable POST."""
         images = []
         for source in sources:
             raw = (

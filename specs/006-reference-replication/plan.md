@@ -1,0 +1,9 @@
+# 技术方案
+
+新增replica_models.py描述Agent提交的源图分析、类目迁移决定、逐图目标结构、提示导出及复核证据。DesignBrief新增可选replica，原普通设计默认不启用。replica.py负责角色绑定、受控编译及结果复核，replica_tools.py注册3工具、1Resource、1Prompt。复用inspect_design_images和现有确认、提交、查询、等待/取消。
+
+商品和风格图均由原MediaLoader验证并冻结；图片1是风格参考，图片2及以后是本商品/SKU真实图片。源图分析不直接充当目标文案，Agent必须填写完整目标frames。不同类目必须显式说明迁移取舍。导出与收费队列共用相同提示编译函数，不偷偷改变提示词。复刻frames决定图片数，允许单张详情图；原main_count/detail_count继续服务普通设计。
+
+复核单独存入designs数据库的replica_reviews表，不修改批准的内容摘要。记录绑定design/revision/task/image SHA256；只能复核本版本已落盘的图片，结论标为Agent报告，服务端仅校验关联和数据。get_ecommerce_design增加默认空reviews，普通历史数据兼容。不确定与修订均返回下一步，新的收费请求仍需用户批准新版本及授权。
+
+保留既有依赖与模型矩阵，不提供浏览器或LLM客户端；视觉推理、品类运营判断、文字润色与审美判断属于Host。工具schema、说明和Resource可组合，Prompt仅用于启动。按现有specs约定保存状态，缺失的.specify原则文件不初始化。延续当前功能分支上的未提交工作，不覆盖005成果。
