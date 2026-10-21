@@ -42,7 +42,9 @@
 
 **正式发布状态（2026-10-21）**：[v0.2.0](https://github.com/tsyecommercialdesigner-cloud/zhenzhen-nanobanana-mcp/releases/tag/v0.2.0)已正式公开，标签提交`66555d72742cf54b98bd3dc4c57a94d3a98d7818`通过[Windows CI39529835229](https://github.com/tsyecommercialdesigner-cloud/zhenzhen-nanobanana-mcp/actions/runs/39529835229)，从GitHub发布标签的独立安装及无收费协议验收已通过，见[发布验收](docs/RELEASE-ACCEPTANCE.md)。不要把远端初始提交`ce7ce74a357782fcda820174c60a9c41090d7fa9`当作MCP版本。
 
-本项目按用户约定将默认安装目录改为`D:\MCP\zhenzhen-nanobanana-mcp`，覆盖通用指南的C盘默认示例，仅变更盘符；不搬迁已有安装或修改现用Host配置。下面流程和[README快速安装](README.md#快速安装与配置)均使用D盘。已发布v0.2.0文件、标签及附件不变，旧版安装脚本仍须显式传入`-InstallRoot 'D:\MCP'`，其Host模板也须按第4节调整路径。下面的发布验证在没有正式Release时仍明确停止，不回退main；升级前保留`.env`与私有图片/账本。
+当前开发候选版本为0.2.1，纳入D盘默认路径及最新验收文档；本轮仅获准创建Release草稿，不能作为正式成员发行版安装。公开前仍按下面流程获取已正式公开的v0.2.0，旧版脚本的路径例外见下段；[0.2.1候选说明](docs/RELEASE-0.2.1.md)记录范围与验证边界。未来正式公开须另获授权，不修改既有v0.2.0。
+
+本项目按用户约定将默认安装目录改为`D:\MCP\zhenzhen-nanobanana-mcp`，与本次同步的手册指南一致，仅变更盘符；不搬迁已有安装或修改现用Host配置。下面流程和[README快速安装](README.md#快速安装与配置)均使用D盘。已发布v0.2.0文件、标签及附件不变，旧版安装脚本仍须显式传入`-InstallRoot 'D:\MCP'`，其Host模板也须按第4节调整路径。下面的发布验证在没有正式Release时仍明确停止，不回退main；升级前保留`.env`与私有图片/账本。
 
 仓库：https://github.com/tsyecommercialdesigner-cloud/zhenzhen-nanobanana-mcp.git 。正式版本与验收记录从 [Releases](https://github.com/tsyecommercialdesigner-cloud/zhenzhen-nanobanana-mcp/releases) 取得；[CI](https://github.com/tsyecommercialdesigner-cloud/zhenzhen-nanobanana-mcp/actions/workflows/ci.yml) 与发布记录必须对应同一完整SHA。仓库公开，HTTPS clone无需密钥；不要把GitHub令牌放入URL。以后改为私有时使用自己的SSH或Git凭据管理器授权，业务API密钥不能用于Git认证。
 
@@ -446,7 +448,7 @@ if ($LASTEXITCODE -ne 0) { throw '回滚协议复验失败。' }
 
 ### 可选ZIP
 
-仅保留旧成员明确需要时的补充分发：`pwsh -NoProfile -File './scripts/package-user.ps1'`，白名单`user-files.json`，输出`output/zhenzhen-nanobanana-mcp-0.2.0-user.zip`；已有包拒绝覆盖，可显式指定`-DestinationDirectory`。ZIP只有一个`zhenzhen-nanobanana-mcp/`顶层目录，解压到父目录即可。它不携带.env/依赖环境/开发资料/业务图片，也不能代替GitHub CI与正式版本。完整可选验收仍由`verify-delivery.py`执行，本次不额外发布成员ZIP。
+仅保留旧成员明确需要时的补充分发：`pwsh -NoProfile -File './scripts/package-user.ps1'`，白名单`user-files.json`，当前元数据对应输出`output/zhenzhen-nanobanana-mcp-0.2.1-user.zip`（本轮不生成或发布）；已有包拒绝覆盖，可显式指定`-DestinationDirectory`。ZIP只有一个`zhenzhen-nanobanana-mcp/`顶层目录，解压到父目录即可。它不携带.env/依赖环境/开发资料/业务图片，也不能代替GitHub CI与正式版本。完整可选验收仍由`verify-delivery.py`执行，本次不额外发布成员ZIP。
 
 ## 7. 资源清单
 

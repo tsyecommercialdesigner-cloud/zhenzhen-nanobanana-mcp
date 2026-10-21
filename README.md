@@ -6,7 +6,7 @@
 
 ## 当前状态
 
-- 项目版本：`0.2.0`；Python `3.12.14`，uv `0.12.9`，FastMCP `4.1.0`，MCP SDK `2.3.0`。
+- 当前候选版本：`0.2.1`，本轮仅准备 Release 草稿，尚未正式公开；见[候选版本说明](docs/RELEASE-0.2.1.md)。Python `3.12.14`，uv `0.12.9`，FastMCP `4.1.0`，MCP SDK `2.3.0`。
 - 正式版本：[v0.2.0](https://github.com/tsyecommercialdesigner-cloud/zhenzhen-nanobanana-mcp/releases/tag/v0.2.0)，提交 `66555d72742cf54b98bd3dc4c57a94d3a98d7818`，对应 [Windows CI](https://github.com/tsyecommercialdesigner-cloud/zhenzhen-nanobanana-mcp/actions/runs/39529835229) 成功；[独立安装及协议验收](docs/RELEASE-ACCEPTANCE.md)通过。Windows 是当前安装和验收平台；未声明 Linux/macOS 已验收。
 - 当前开发版默认安装到 `D:\MCP\zhenzhen-nanobanana-mcp`，仅调整盘符，目录层级不变。已发布 v0.2.0 的文件保持原样；使用其安装脚本时显式传入 `-InstallRoot 'D:\MCP'`，Host 模板中的路径按本页调整。日常启动不拉取最新 main。
 - Codex app-server、DSH CLI 的工具发现及免费调用已验证；GUI、自主选工具和各 Host 完整私人配置不在该结论内，见 [Host 验收](docs/HOST-VALIDATION.md)。
