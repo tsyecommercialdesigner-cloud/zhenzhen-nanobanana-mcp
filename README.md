@@ -6,9 +6,9 @@
 
 ## 当前状态
 
-- 当前候选版本：`0.2.1`，本轮仅准备 Release 草稿，尚未正式公开；见[候选版本说明](docs/RELEASE-0.2.1.md)。Python `3.12.14`，uv `0.12.9`，FastMCP `4.1.0`，MCP SDK `2.3.0`。
-- 正式版本：[v0.2.0](https://github.com/tsyecommercialdesigner-cloud/zhenzhen-nanobanana-mcp/releases/tag/v0.2.0)，提交 `66555d72742cf54b98bd3dc4c57a94d3a98d7818`，对应 [Windows CI](https://github.com/tsyecommercialdesigner-cloud/zhenzhen-nanobanana-mcp/actions/runs/39529835229) 成功；[独立安装及协议验收](docs/RELEASE-ACCEPTANCE.md)通过。Windows 是当前安装和验收平台；未声明 Linux/macOS 已验收。
-- 当前开发版默认安装到 `D:\MCP\zhenzhen-nanobanana-mcp`，仅调整盘符，目录层级不变。已发布 v0.2.0 的文件保持原样；使用其安装脚本时显式传入 `-InstallRoot 'D:\MCP'`，Host 模板中的路径按本页调整。日常启动不拉取最新 main。
+- 当前正式版本：`0.2.1`；Python `3.12.14`，uv `0.12.9`，FastMCP `4.1.0`，MCP SDK `2.3.0`。
+- [v0.2.1](https://github.com/tsyecommercialdesigner-cloud/zhenzhen-nanobanana-mcp/releases/tag/v0.2.1) 已正式公开，提交 `09501092c369e2a314df757eece5fa8d7a38e64e`，对应 [Windows CI](https://github.com/tsyecommercialdesigner-cloud/zhenzhen-nanobanana-mcp/actions/runs/39534145510) 成功；[D 盘独立安装及协议验收](docs/RELEASE-0.2.1-ACCEPTANCE.md)通过。Windows 是当前安装和验收平台；未声明 Linux/macOS 已验收。
+- 默认安装到 `D:\MCP\zhenzhen-nanobanana-mcp`，安装脚本和四份 Host 模板均使用该路径。日常启动不拉取最新 main；已有其它路径安装按手册保留配置并更新，不自动搬迁。
 - Codex app-server、DSH CLI 的工具发现及免费调用已验证；GUI、自主选工具和各 Host 完整私人配置不在该结论内，见 [Host 验收](docs/HOST-VALIDATION.md)。
 
 ## 快速安装与配置
@@ -18,10 +18,10 @@
 ```powershell
 $ErrorActionPreference = 'Stop'
 $ProjectDir = 'D:\MCP\zhenzhen-nanobanana-mcp'
-$ExpectedCommit = '66555d72742cf54b98bd3dc4c57a94d3a98d7818'
+$ExpectedCommit = '09501092c369e2a314df757eece5fa8d7a38e64e'
 if (Test-Path -LiteralPath $ProjectDir) { throw '目录已存在，请按手册更新，不能覆盖安装。' }
 New-Item -ItemType Directory -Path (Split-Path -Parent $ProjectDir) -Force | Out-Null
-git clone --branch v0.2.0 --single-branch 'https://github.com/tsyecommercialdesigner-cloud/zhenzhen-nanobanana-mcp.git' $ProjectDir
+git clone --branch v0.2.1 --single-branch 'https://github.com/tsyecommercialdesigner-cloud/zhenzhen-nanobanana-mcp.git' $ProjectDir
 if ($LASTEXITCODE -ne 0) { throw '仓库获取失败。' }
 git -C $ProjectDir checkout --detach $ExpectedCommit
 if ($LASTEXITCODE -ne 0) { throw '固定提交不存在，停止安装。' }
