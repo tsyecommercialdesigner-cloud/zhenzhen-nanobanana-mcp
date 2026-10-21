@@ -1,14 +1,12 @@
 # zhenzhen-nanobanana-mcp
 
-用于家居日用百货电商绘图的本地 MCP Server：商品主图、详情页、场景图、营销海报和参考图编辑。Agent 一次可登记 1–12 项后台任务，立即得到持久化状态，后续查询图片路径；默认并发 4，图片自动保存到本机。生成和编辑会产生供应商费用。
+用于家居日用百货电商绘图的本地 MCP Server：商品主图、详情页、场景图、营销海报和参考图编辑。Agent 一次可提交 1–12 项任务，选择异步立即返回，或同步等待完成并落盘后返回；默认并发 4，图片自动保存到本机。生成和编辑会产生供应商费用。
 
 参考图可直接使用本机可读图片绝对路径或公开 HTTP/HTTPS 图片直链，无需搬入 `input`。服务会检查图片内容、大小及网络地址；不自动上传店铺或保证平台审核通过。
 
 ## 安装版本与环境
 
-正在准备 **v0.2.2草稿**，纳入同步出图与只读等待；[候选说明](docs/RELEASE-0.2.2.md)列出范围。暂不公开，也不自动更新已有安装，以下成员安装继续使用已公开v0.2.1。
-
-成员使用已正式公开的 [v0.2.1](https://github.com/tsyecommercialdesigner-cloud/zhenzhen-nanobanana-mcp/releases/tag/v0.2.1)，对应提交 `09501092c369e2a314df757eece5fa8d7a38e64e` 和[成功的 Windows CI](https://github.com/tsyecommercialdesigner-cloud/zhenzhen-nanobanana-mcp/actions/runs/39534145510)。默认目录 `D:\MCP\zhenzhen-nanobanana-mcp`；当前开发分支及文档更新不自动改变成员安装或已发布附件。
+成员使用已正式公开的 [v0.2.2](https://github.com/tsyecommercialdesigner-cloud/zhenzhen-nanobanana-mcp/releases/tag/v0.2.2)，对应提交 `d831573e659bc2a8bf45689d6c1a0b9ce585e5cd` 和[成功的 Windows CI](https://github.com/tsyecommercialdesigner-cloud/zhenzhen-nanobanana-mcp/actions/runs/39571818062)。默认目录 `D:\MCP\zhenzhen-nanobanana-mcp`；当前开发分支及文档更新不自动改变成员安装或已发布附件。
 
 需要 Windows x64、Git、PowerShell 7、uv（已验证 `0.12.9`）。项目精确使用 Python `3.12.14`，由 uv 按锁定声明准备；FastMCP `4.1.0`、MCP SDK `2.3.0`。首次安装需访问 GitHub、Python 下载源和 PyPI；绘图及图片下载另需业务网络。Linux/macOS/WSL 尚未完成安装验收。
 
@@ -19,13 +17,15 @@
 ```powershell
 $ErrorActionPreference = 'Stop'
 $ProjectDir = 'D:\MCP\zhenzhen-nanobanana-mcp'
-$ExpectedCommit = '09501092c369e2a314df757eece5fa8d7a38e64e'
+$ExpectedCommit = 'd831573e659bc2a8bf45689d6c1a0b9ce585e5cd'
 if (Test-Path -LiteralPath $ProjectDir) { throw '目录已存在，请按手册更新，不能覆盖。' }
 New-Item -ItemType Directory -Path (Split-Path -Parent $ProjectDir) -Force | Out-Null
-git clone --branch v0.2.1 --single-branch 'https://github.com/tsyecommercialdesigner-cloud/zhenzhen-nanobanana-mcp.git' $ProjectDir
+git clone --branch v0.2.2 --single-branch 'https://github.com/tsyecommercialdesigner-cloud/zhenzhen-nanobanana-mcp.git' $ProjectDir
 if ($LASTEXITCODE -ne 0) { throw '仓库获取失败。' }
 $ActualCommit = git -C $ProjectDir rev-parse HEAD
 if ($LASTEXITCODE -ne 0 -or $ActualCommit -cne $ExpectedCommit) { throw '标签提交不匹配。' }
+$Evidence = & (Join-Path $ProjectDir 'scripts\install-from-github.ps1') -Tag v0.2.2 -VerifyOnly
+if ($Evidence.Commit -cne $ExpectedCommit -or $Evidence.Tag -cne 'v0.2.2') { throw '正式发布记录不匹配。' }
 uv --directory $ProjectDir sync --locked --no-dev
 if ($LASTEXITCODE -ne 0) { throw '运行依赖安装失败。' }
 pwsh -NoProfile -File (Join-Path $ProjectDir 'scripts\smoke-test.ps1')
@@ -61,22 +61,33 @@ stdio 等待输入时没有普通输出属于正常状态。Host 负责启动子
 
 ## 使用流程
 
-开发工作区新增 `generate_images`（同步生成/编辑）和 `wait_image_tasks`（只等待已有任务），共8工具。下方固定标签安装的**已发布v0.2.1仍为原6工具异步版本**，新增能力尚未发布，也未更新现用D盘安装，见[同步功能规范](specs/004-sync-image-tools/spec.md)。
+正式 v0.2.2 提供 8 个工具，支持同步与异步出图，详见[资源与参数](MANUAL.md#7-资源清单)：
+
+| 工具 | 用途 |
+|---|---|
+| `list_models` | 免费核对模型、配置与能力 |
+| `plan_ecommerce_images` | 免费规划商品图提示词 |
+| `generate_images` | 提交生成/编辑任务，等待完成并落盘后返回，会收费 |
+| `submit_image_tasks` | 持久化后立即返回，后台并发生成/编辑，会收费 |
+| `get_image_tasks` | 查询已有任务及图片路径 |
+| `wait_image_tasks` | 只等待已有任务，不新增绘图请求 |
+| `cancel_image_tasks` | 取消未发出的任务；已可能发出时标记不确定 |
+| `get_batch_result` | 只读查询旧批次 |
 
 1. 调用免费 `list_models` 核对配置，提供已核实的商品事实与参考图。
 2. 用免费 `plan_ecommerce_images` 规划并审阅提示词；出图前确认收费授权。
-3. 为每项提供稳定的 `(checkpointer, thread_id, task_id)`，选择异步 `submit_image_tasks` 立即登记，或开发版同步 `generate_images` 等待本组完成、图片落盘后返回。
-4. 异步任务用 `get_image_tasks` 立即查询；已有任务也可用开发版 `wait_image_tasks` 等待，成功后使用返回的图片绝对路径。
+3. 为每项提供稳定的 `(checkpointer, thread_id, task_id)`，选择异步 `submit_image_tasks` 立即登记，或同步 `generate_images` 等待本组完成、图片落盘后返回。
+4. 异步任务用 `get_image_tasks` 立即查询；已有任务也可用 `wait_image_tasks` 等待，成功后使用返回的图片绝对路径。
 
 同步生成/等待的 `wait_timeout_seconds` 默认600，严格整数1–1200秒，包含排队时间；Host工具超时应更长并预留传输开销。等待超时返回 `isError=true`、`wait_timed_out=true` 及当前状态和已完成图片，只结束此次等待，后台继续。客户端取消也不主动取消队列任务，按原身份继续等待或查询，不能换编号重提；如果Host关闭整个MCP进程，仍受原有恢复规则约束。
 
-相同身份与相同参数跨同步/异步入口复用记录；参数冲突整组拒绝新增。`queued/preparing/running` 只表示尚未完成；`failed/unknown`、超时或取消不保证未收费，不自动换编号重试。防重范围为同一实际输出目录，保留 SQLite 与图片，不删除账本绕过幂等。其余工具为 `cancel_image_tasks` 和旧批次只读 `get_batch_result`；开发版共 8 Tools、1 Prompt、1 Resource，详见[资源与参数](MANUAL.md#7-资源清单)。
+相同身份与相同参数跨同步/异步入口复用记录；参数冲突整组拒绝新增。`queued/preparing/running` 只表示尚未完成；`failed/unknown`、超时或取消不保证未收费，不自动换编号重试。防重范围为同一实际输出目录，保留 SQLite 与图片，不删除账本绕过幂等。除上述8工具外还提供1 Prompt、1 Resource。
 
 默认模型 `gemini-nano-banana-2.1`，自动使用 DALL·E Generations；`nano-banana-pro` 仅 DALL·E，支持 Generations/Edits；Flash-lite 仅 Gemini/Chat。两个 banana 家族支持基础版及 `-2k/-4k`。显式分辨率长边 ≤1024 用基础版、≤2048 用 2k、>2048 用 4k；Flash-lite 不路由。此规则只选择模型，不保证精确输出像素，完整接口矩阵见手册。
 
 ## 验证与维护
 
-[发布安装验收](docs/RELEASE-0.2.1-ACCEPTANCE.md)、[Host 免费验收](docs/HOST-VALIDATION.md)、[本机 D 盘迁移验收](docs/LOCAL-D-DRIVE-MIGRATION-ACCEPTANCE.md)及[10 项业务验收](docs/TEN-IMAGE-ACCEPTANCE.md)分别记录安装、协议、Host 与真实业务证据。当前 Codex 与 DSH CLI 隔离 profile 已有工具调用证据；DSH 三种完整私人 profile、Multica 集成、各 GUI、Bash/Zsh、全部模型/变体和真实故障恢复仍有未验证范围，不因更新文档视为通过。
+[v0.2.2发布安装验收](docs/RELEASE-0.2.2-ACCEPTANCE.md)记录独立安装、双协议8工具及同步功能的受控替身验证；[D盘升级与重启后Codex验收](docs/LOCAL-V0.2.2-UPGRADE-ACCEPTANCE.md)记录现用安装升级、当前会话8工具发现、只读等待和历史图片核对，没有新增收费出图。历史[Host 免费验收](docs/HOST-VALIDATION.md)、[D盘迁移验收](docs/LOCAL-D-DRIVE-MIGRATION-ACCEPTANCE.md)及[10项业务验收](docs/TEN-IMAGE-ACCEPTANCE.md)分别保留原有范围。DSH 三种完整私人 profile、Multica 集成、各 GUI、Bash/Zsh、全部模型/变体、真实Host长等待出图和真实故障恢复仍有未验证范围，不因更新文档视为通过。
 
 维护者遵循分支 → PR → Windows CI → 评审 → 合并；发布单独授权，先创建草稿，核对后才公开。开发安装使用 `uv sync --locked`、检查使用 `uv run --no-sync python scripts/check.py`；成员只需锁定运行依赖。任务状态见[交付任务](specs/002-github-distribution/tasks.md)。
 
