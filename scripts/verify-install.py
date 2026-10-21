@@ -42,7 +42,7 @@ def main():
         project = temporary / f"zhenzhen_nanobanana_mcp-{version}"
         assert (project / "pyproject.toml").is_file()
         private = project / ".env"
-        private.write_text("NANOBANANA_API_KEY=install-check-not-real\n", encoding="utf-8")
+        private.write_text("ZHENZHEN_NANOBANANA_API_KEY=install-check-not-real\n", encoding="utf-8")
         before = private.read_bytes()
         acl_args = [
             "pwsh",
@@ -64,7 +64,7 @@ def main():
         ):
             env.pop(name, None)
         env["UV_PROJECT_ENVIRONMENT"] = str(project / ".venv")
-        env["NANOBANANA_API_KEY"] = "different-process-not-real"
+        env["ZHENZHEN_NANOBANANA_API_KEY"] = "different-process-not-real"
         env["NANOBANANA_BASE_URL"] = "https://ai.t8star.org"
         env["NANOBANANA_OUTPUT_DIR"] = str(project / "outputs")
         env["NANOBANANA_CONCURRENCY"] = "4"

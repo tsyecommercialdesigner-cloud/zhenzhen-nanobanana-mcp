@@ -18,9 +18,14 @@ for filename in (".mcp.json.example", "templates/claude-code.mcp.json.example"):
     entry = data["mcpServers"]["zhenzhen-nanobanana-mcp"]
     assert "cwd" not in entry and "env" not in entry and entry["command"] == "uv"
 config = tomllib.loads((root / "templates/codex.config.toml.example").read_text(encoding="utf-8"))
-assert "NANOBANANA_API_KEY" not in config["mcp_servers"]["zhenzhen-nanobanana-mcp"]["env_vars"]
+assert (
+    "ZHENZHEN_NANOBANANA_API_KEY"
+    not in config["mcp_servers"]["zhenzhen-nanobanana-mcp"]["env_vars"]
+)
 assert "env" not in data["mcpServers"]["zhenzhen-nanobanana-mcp"]
-assert (root / ".env.example").read_text(encoding="utf-8").splitlines()[-1] == "NANOBANANA_API_KEY="
+assert (root / ".env.example").read_text(encoding="utf-8").splitlines()[
+    -1
+] == "ZHENZHEN_NANOBANANA_API_KEY="
 
 
 class InertLoader(yaml.SafeLoader):

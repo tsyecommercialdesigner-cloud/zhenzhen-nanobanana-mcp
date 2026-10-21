@@ -48,7 +48,7 @@ with zipfile.ZipFile(archive) as source:
     assert prefix + ".env" not in source.namelist()
     assert (
         source.read(prefix + ".env.example").decode("utf-8").splitlines()[-1]
-        == "NANOBANANA_API_KEY="
+        == "ZHENZHEN_NANOBANANA_API_KEY="
     )
 with tarfile.open(root / f"dist/zhenzhen_nanobanana_mcp-{version}.tar.gz") as source:
     names = source.getnames()
@@ -75,7 +75,7 @@ with tempfile.TemporaryDirectory(prefix="nanobanana-delivery-") as temporary:
     assert project.is_dir() and (project / "pyproject.toml").is_file()
     assert not (project / project_name).exists()
     private_env = project / ".env"
-    private_env.write_text("NANOBANANA_API_KEY=upgrade-test-not-real\n", encoding="utf-8")
+    private_env.write_text("ZHENZHEN_NANOBANANA_API_KEY=upgrade-test-not-real\n", encoding="utf-8")
     acl_script = audit_root / "read-acl.ps1"
     acl_script.write_text(
         "param([string]$Target)\n(Get-Acl -LiteralPath $Target).Sddl\n", encoding="utf-8"
@@ -109,7 +109,7 @@ with tempfile.TemporaryDirectory(prefix="nanobanana-delivery-") as temporary:
     env.pop("PYTHONPATH", None)
     env.pop("PYTHONHOME", None)
     env.pop("NANOBANANA_PROJECT_DIR", None)
-    env["NANOBANANA_API_KEY"] = "environment-not-real"
+    env["ZHENZHEN_NANOBANANA_API_KEY"] = "environment-not-real"
     env["NANOBANANA_BASE_URL"] = "https://ai.t8star.org"
     env["NANOBANANA_INPUT_DIRS"] = str(project / "input")
     env["NANOBANANA_OUTPUT_DIR"] = str(project / "outputs")

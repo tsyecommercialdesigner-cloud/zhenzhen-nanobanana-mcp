@@ -10,7 +10,7 @@ from urllib.parse import urlsplit
 from dotenv.parser import parse_stream
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
-API_KEY_FIELD = "NANOBANANA_API_KEY"
+API_KEY_FIELD = "ZHENZHEN_NANOBANANA_API_KEY"
 
 
 class BusinessError(Exception):

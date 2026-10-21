@@ -46,7 +46,7 @@ def scan():
             values = [
                 line for line in text.splitlines() if line.strip() and not line.startswith("#")
             ]
-            if values != ["NANOBANANA_API_KEY="]:
+            if values != ["ZHENZHEN_NANOBANANA_API_KEY="]:
                 problems.append((relative, "nonempty or unexpected credential template"))
     if problems:
         for path, reason in problems:

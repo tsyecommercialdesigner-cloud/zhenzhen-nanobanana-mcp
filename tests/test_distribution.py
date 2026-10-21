@@ -139,7 +139,7 @@ class DistributionTests(unittest.TestCase):
             for name, text in (
                 ("private.env", "private-not-real"),
                 ("source.py", secret),
-                (".env.example", "NANOBANANA_API_KEY=private-not-real"),
+                (".env.example", "ZHENZHEN_NANOBANANA_API_KEY=private-not-real"),
             ):
                 (fixture / name).write_text(text, encoding="utf-8")
                 output = io.StringIO()
@@ -151,7 +151,9 @@ class DistributionTests(unittest.TestCase):
                         module.scan()
                 self.assertNotIn(secret, output.getvalue())
                 self.assertNotIn("private-not-real", output.getvalue())
-            (fixture / ".env.example").write_text("NANOBANANA_API_KEY=\n", encoding="utf-8")
+            (fixture / ".env.example").write_text(
+                "ZHENZHEN_NANOBANANA_API_KEY=\n", encoding="utf-8"
+            )
             with (
                 patch.object(module, "ROOT", fixture),
                 patch.object(module, "candidate_paths", return_value=[".env.example"]),

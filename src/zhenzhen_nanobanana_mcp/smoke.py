@@ -24,12 +24,16 @@ TOOLS = {
 async def check(mode: str, temporary: Path):
     project = temporary / f"config-{mode}"
     project.mkdir()
-    (project / ".env").write_text("NANOBANANA_API_KEY=smoke-test-not-real\n", encoding="utf-8")
+    (project / ".env").write_text(
+        "ZHENZHEN_NANOBANANA_API_KEY=smoke-test-not-real\n", encoding="utf-8"
+    )
     unrelated = temporary / f"host-cwd-{mode}"
     unrelated.mkdir()
-    (unrelated / ".env").write_text("NANOBANANA_API_KEY=\n", encoding="utf-8")
+    (unrelated / ".env").write_text("ZHENZHEN_NANOBANANA_API_KEY=\n", encoding="utf-8")
     env = dict(os.environ)
-    env["NANOBANANA_API_KEY"] = ""  # File precedence must win over even an invalid process value.
+    env["ZHENZHEN_NANOBANANA_API_KEY"] = (
+        ""  # File precedence must win over even an invalid process value.
+    )
     env["NANOBANANA_PROJECT_DIR"] = str(project)
     env["NANOBANANA_BASE_URL"] = "https://ai.t8star.org"
     env["NANOBANANA_TIMEOUT_SECONDS"] = "300"
@@ -155,10 +159,10 @@ async def check(mode: str, temporary: Path):
 async def check_invalid_startup(temporary: Path):
     project = temporary / "invalid-config"
     project.mkdir()
-    (project / ".env").write_text("NANOBANANA_API_KEY=\n", encoding="utf-8")
+    (project / ".env").write_text("ZHENZHEN_NANOBANANA_API_KEY=\n", encoding="utf-8")
     env = dict(os.environ)
     env["NANOBANANA_PROJECT_DIR"] = str(project)
-    env["NANOBANANA_API_KEY"] = "smoke-fallback-not-real"
+    env["ZHENZHEN_NANOBANANA_API_KEY"] = "smoke-fallback-not-real"
     process = await asyncio.create_subprocess_exec(
         sys.executable,
         "-m",
@@ -174,7 +178,7 @@ async def check_invalid_startup(temporary: Path):
         await process.communicate()
         raise
     assert process.returncode == 2 and not stdout
-    assert b"NANOBANANA_API_KEY" in stderr and b"smoke-fallback-not-real" not in stderr
+    assert b"ZHENZHEN_NANOBANANA_API_KEY" in stderr and b"smoke-fallback-not-real" not in stderr
     return {"empty_file_key_startup_exit_code": 2, "fallback_blocked": True}
 
 

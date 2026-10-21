@@ -19,7 +19,7 @@
 
 | 环境变量 | 必填 | 默认/用途 |
 |---|---|---|
-| `NANOBANANA_API_KEY` | 日常启动必填 | 服务读取项目 `.env`；原始 ASCII 密钥，无内部空白/控制字符，不含 `Bearer `，不要求固定前缀 |
+| `ZHENZHEN_NANOBANANA_API_KEY` | 日常启动必填 | 服务读取项目 `.env`；原始 ASCII 密钥，无内部空白/控制字符，不含 `Bearer `，不要求固定前缀 |
 | `NANOBANANA_PROJECT_DIR` | 否 | 非秘密项目绝对目录；默认从已验证 src 布局定位，特殊 wheel 安装布局需显式指定；其它运行设置仍从进程环境读取 |
 | `NANOBANANA_BASE_URL` | 否 | `https://ai.t8star.org`；HTTPS 服务根地址，无路径/query/凭据；属于操作员信任配置 |
 | `NANOBANANA_INPUT_DIRS` | 已停用 | 旧配置被忽略，不再限制本地图片目录，无需修改已有Host配置即可解除白名单 |
@@ -28,7 +28,9 @@
 | `NANOBANANA_MAX_PENDING_TASKS` | 否 | `200`；整数 12–1000，共享账本中 queued/preparing/running 的容量上限 |
 | `NANOBANANA_CONCURRENCY` | 否 | `4`；整数 1–10，同一输出目录的多个服务进程共享并发上限，所有 Host 应采用相同配置 |
 
-实际私有文件为 `C:\MCP\zhenzhen-nanobanana-mcp\.env`；开发时为实际开发项目根目录 `.env`。服务显式定位，不搜索 Host 工作目录/父目录，不把 `.env.example` 当运行凭据。文件仅解析 `NANOBANANA_API_KEY` 凭据字段，不导入 `os.environ`；其它非秘密设置仍从进程环境读取。
+实际私有文件为 `C:\MCP\zhenzhen-nanobanana-mcp\.env`；开发时为实际开发项目根目录 `.env`。服务显式定位，不搜索 Host 工作目录/父目录，不把 `.env.example` 当运行凭据。文件仅解析 `ZHENZHEN_NANOBANANA_API_KEY` 凭据字段，不导入 `os.environ`；其它非秘密设置仍从进程环境读取。
+
+2026-10-21起，所有凭据来源统一使用上述新名称，旧名称不再读取。升级已有安装时，只重命名私有 `.env` 中的密钥字段，保留值、其它内容及权限；若使用环境变量回退，在对应来源配置新名称并重启服务。不把旧字段静默当作新字段，也不自动删除用户的其它环境变量。
 
 优先级是 **项目 `.env` → 进程环境 → Windows 当前运行账号 HKCU\Environment**。只有文件/字段缺失才回退；字段已定义但空/非法、重复、文件不可读/非 UTF-8/语法错误均拒绝启动，不使用旧密钥。兼容来源中已定义但空/非法也立即失败；全部缺失退出 2。Windows 回退只读当前账号，不访问机器/其他账号或写注册表；非 Windows 仅兼容进程环境。
 
@@ -105,7 +107,7 @@ notepad.exe $EnvPath
 if ($LASTEXITCODE -ne 0) { throw '无法打开 .env，请使用本地文本编辑器。' }
 ```
 
-在本地编辑器中将 `NANOBANANA_API_KEY=` 空值填为原始服务密钥，UTF-8 保存。空模板不能直接启动日常服务；如确需兼容旧环境来源，应明确移除文件中的字段，不能留空。文件是明文，需限制读取权限。以下 NTFS ACL 示例用于自己拥有的文件，限定当前运行账号、SYSTEM 和 Administrators；服务账号不同时替换当前账号 SID，权限不足由文件所有者处理，不默认要求管理员运行 MCP：
+在本地编辑器中将 `ZHENZHEN_NANOBANANA_API_KEY=` 空值填为原始服务密钥，UTF-8 保存。空模板不能直接启动日常服务；如确需兼容旧环境来源，应明确移除文件中的字段，不能留空。文件是明文，需限制读取权限。以下 NTFS ACL 示例用于自己拥有的文件，限定当前运行账号、SYSTEM 和 Administrators；服务账号不同时替换当前账号 SID，权限不足由文件所有者处理，不默认要求管理员运行 MCP：
 
 ```powershell
 $ErrorActionPreference = 'Stop'
