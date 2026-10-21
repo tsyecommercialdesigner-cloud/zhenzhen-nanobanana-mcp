@@ -64,3 +64,17 @@ main仍为ce7ce74a357782fcda820174c60a9c41090d7fa9，README/LICENSE与main一致
 密钥修正PR #2受审c822889合入main的91af94c38c64d46bdcc072259112a26037faeb30，PR CI39524384546与main CI39524783398成功。从GitHub独立clone该main并锁定安装无开发依赖，先通过Codex0.153.0实际app-server，再通过DSH0.2.0-rc.2实际CLI的隔离profile/工具桥；两者发现6工具，免费模型清单、6项详情页计划、空任务查询及不存在历史批次的失败语义均通过。没有提交图像任务、输出图片、标签或Release。实际Windows当前用户新字段回退也通过，凭据值未输出或落盘。
 
 完整范围、命令入口、证据位置和未覆盖项见[Host验收记录](../../docs/HOST-VALIDATION.md)。这不是GUI点击、Agent自主选工具、现用完整profile或收费上游验收。
+
+## 2026-10-21后续：十项验收与README恢复
+
+在已获单张、3项及编辑验收授权后，用户新增授权10项详情页并明确仍不发布。main728172c独立stdio实例一次登记10项，0.406秒返回，按默认并发4执行，80.625秒观察到全部成功；整批原身份重放均reused=true，10项任务及图片不变，实际POST仍为10。原始图片/私有账本/请求与日志留独立本机目录，见[十项验收记录](../../docs/TEN-IMAGE-ACCEPTANCE.md)。不据此宣称故障恢复或账单后台验证。
+
+用户新指示取代先前保留初始化README的限制，按MANUAL-WRITING-GUIDE重写README，LICENSE未改；MANUAL同步main完整源码和无正式Release的实际状态。README提供已通过CI完整SHA的明确试用流程，正式Release安装脚本继续在无Release时拒绝，不修改其门禁。独立目录实际运行clone main、checkout --detach 728172c、uv sync --locked --no-dev和免费smoke成功（业务网络调用0）；未执行示例中的编辑器或修改现用Host。README四个PowerShell代码块仅做AST语法检查，未对默认C:\MCP执行这些示例。文档链接/模板/格式与Git空白检查通过；本轮文档仍为本地变更，未提交/推送或发布。
+
+## 同日后续：提交前审查及草稿授权
+
+用户明确授权提交/推送dev、PR、Windows CI与审查通过后合并，随后创建Release草稿，禁止正式公开。审查范围为README/MANUAL、文档检查脚本、单张/小批量编辑/十项验收、交付任务及发布说明；对照原始私有证据离线重新核对15张图片hash、三轮POST计数1/4/10、全部reused标记和重放前后完整任务行一致，未产生新收费调用。未发现阻塞本次提交的缺陷，修正发布说明中沿用初始化README的旧政策。与main728172c相比src、依赖声明/锁、Host模板及工作流均无变化，LICENSE未改。
+
+提交清单为README.md、MANUAL.md、scripts/check-docs.py、docs/DELIVERY-PLAN.md、docs/RELEASE.md、三份收费验收文档及002/tasks、002/verification、003/verification，共11个文本文件。图片/SQLite/提示词请求/原始日志/凭据/缓存/依赖与构建产物不入库。完整本地11阶段再次通过，69测试通过、严格依赖审计无告警、构建/stdio/独立安装通过；最终文档一致性、凭据扫描及Git空白复查也通过。该记录不预填远端PR或未来合入SHA的成功状态。
+
+已配置release环境24873880407，required reviewer为唯一维护者、prevent_self_review=false，branch policy只允许main；正常审批不冒充第二账号或管理员绕过。标签规则集25518329 active，refs/tags/v*禁止更新/删除、无绕过身份。main规则集25471021保持strict Actions quality、PR、讨论解决、禁强推/删除和空bypass。后续Release workflow须读取精确main合入SHA的成功CI并重跑检查，再等待环境正常审批，只创建v0.2.0草稿。tag创建后可见，Release不公开；run/SHA/tag/草稿/资产摘要以实际GitHub记录为准，不预填成功。

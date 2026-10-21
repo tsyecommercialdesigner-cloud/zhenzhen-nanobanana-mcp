@@ -1,6 +1,6 @@
 # 仓库门禁与草稿发布
 
-目标仓库：https://github.com/tsyecommercialdesigner-cloud/zhenzhen-nanobanana-mcp ，默认分支main，候选集成分支dev。执行范围与六步标准见 [DELIVERY-PLAN.md](DELIVERY-PLAN.md)，任务状态唯一来源为 [002/tasks.md](../specs/002-github-distribution/tasks.md)。Windows是当前唯一CI平台；本服务公开6工具、1Prompt、1Resource。用户要求README.md与LICENSE采用远端main原版，详细使用说明由MANUAL维护。
+目标仓库：https://github.com/tsyecommercialdesigner-cloud/zhenzhen-nanobanana-mcp ，默认分支main，候选集成分支dev。执行范围与六步标准见 [DELIVERY-PLAN.md](DELIVERY-PLAN.md)，任务状态唯一来源为 [002/tasks.md](../specs/002-github-distribution/tasks.md)。Windows是当前唯一CI平台；本服务公开6工具、1Prompt、1Resource。初始迁移保留远端README/LICENSE；用户随后授权重写README，现提供快速入门，MANUAL维护详细步骤，LICENSE继续保留。
 
 ## dev、PR与Windows CI
 
@@ -15,7 +15,9 @@
 
 ## Release只创建草稿
 
-发布前按授权设置release环境：required reviewers、仅默认分支可发布；保护v*标签禁止更新/删除，允许批准的身份创建新tag。现有代码读取环境规则，缺少评审保护就停止。当前没有因计划修订而自动配置门禁、合并或触发发布。
+2026-10-21用户明确授权：审查本地改动，提交推送dev、创建PR，Windows CI和审查通过后合并，复验main并创建Release草稿；不正式公开。已建立release环境（id24873880407），required reviewer为唯一维护者tsyecommercialdesigner-cloud，prevent_self_review=false，允许其按直接授权完成正常审批；不是独立第二账号审查，也不使用管理员绕过。deployment branch policy仅允许main。
+
+已建立active标签规则集release-tags-immutable（id25518329），匹配refs/tags/v*，禁止更新/删除、bypass_actors为空；不禁止首次创建，CD获release审批后创建新tag。现有资格脚本读取环境reviewer规则，缺少保护即停止。已配置门禁不等于已经执行工作流，具体run、tag、草稿及最终SHA以GitHub实际记录为准。
 
 1. PR经评审及明确合入授权后合并，等待同一完整SHA在main的push CI全部成功。不得借用dev或合并前PR的结果。
 2. 在默认分支手动触发Release workflow_dispatch，输入已合入SHA。受信任默认分支代码先验证40位小写SHA、默认分支祖先关系、该SHA成功的main push CI、quality及所有job成功、X.Y.Z版本及不存在的vX.Y.Z，再checkout目标、锁定安装并重跑检查。
@@ -30,4 +32,4 @@
 
 按MANUAL第5节保留.env/ACL、图片、tasks.sqlite3与batches.sqlite3，再切回已记录的SHA、安装该锁及复验协议。0.1不处理新任务队列，保留数据，勿用reset --hard、clean -fdx或删账本绕过问题。
 
-2026-10-20首版尚无正式Release，成员安装仍应停止。main初始SHA ce7ce74a357782fcda820174c60a9c41090d7fa9只有README/LICENSE；dev是候选源码，不等于正式版。门禁、远端CI、评审及草稿/公开状态按实际记录报告。
+main初始SHA ce7ce74a357782fcda820174c60a9c41090d7fa9只有README/LICENSE，不能当作可用MCP版本。目前README提供已通过CI的完整SHA试用路径；正式Release安装器仍拒绝草稿/缺失Release，tag存在也不改变这一点。本轮草稿创建授权不包含最终公开；门禁、CI、tag与草稿是否已生成按实际GitHub记录报告。

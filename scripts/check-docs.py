@@ -64,7 +64,22 @@ for required in (
     "## 5. 启动排障",
 ):
     assert required in text, required
-# The user keeps README/LICENSE exactly as upstream main; installation guidance lives here.
+# README was rewritten by explicit user request; its quickstart must agree with the manual.
+readme = (root / "README.md").read_text(encoding="utf-8")
+for required in (
+    "MANUAL.md",
+    "ZHENZHEN_NANOBANANA_API_KEY",
+    "sync --locked --no-dev",
+    "run --no-sync",
+    "submit_image_tasks",
+    "get_image_tasks",
+    "checkpointer, thread_id, task_id",
+):
+    assert required in readme, required
+assert re.search(r"\b[0-9a-f]{40}\b", readme), "README needs a full verified commit SHA"
+for target in re.findall(r"\]\(([^)]+)\)", readme):
+    if "://" not in target and not target.startswith("#"):
+        assert (root / target.split("#", 1)[0]).is_file(), target
 assert "https://github.com/tsyecommercialdesigner-cloud/zhenzhen-nanobanana-mcp/releases" in text
 for entry in json.loads((root / "user-files.json").read_text(encoding="utf-8")):
     assert (root / entry).is_file(), entry
