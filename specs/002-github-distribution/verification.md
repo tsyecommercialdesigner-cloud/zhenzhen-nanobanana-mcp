@@ -88,3 +88,9 @@ main仍为ce7ce74a357782fcda820174c60a9c41090d7fa9，README/LICENSE与main一致
 默认父目录从C盘改为D:\MCP，项目目录仍为D:\MCP\zhenzhen-nanobanana-mcp。安装脚本、四Host模板、README/MANUAL同步，文档检查增加四模板精确路径一致性。PowerShell AST核对InstallRoot默认值和拼接目录深度，README四段及MANUAL十一段PowerShell示例解析通过；未在真实D盘目录安装或迁移现用服务。完整本地11阶段及71项测试通过，源码/依赖锁/版本/发布工作流未改，未新增收费调用。
 
 本轮归档前述正式Release验收及G06.6状态；README/MANUAL改为实际v0.2.0标签与完整SHA，并明确已发布文件不回写，旧脚本可显式指定D盘InstallRoot。只读快照核对Release419061687及v0.2.0标签；本轮仅经dev/PR/Windows CI合入，不发布版本。
+
+## 2026-10-21准备0.2.1草稿
+
+按新增授权将pyproject、模块及uv.lock项目版本同步至0.2.1，锁文件仅根项目版本变化，无依赖升级。纳入D盘默认安装路径、四Host模板及最新正式发布验收；同步本机更新的三份Agent约定与手册指南，核心正文一致，历史验收限制保留。完整本地11阶段、71项测试、构建、无收费stdio及独立运行安装通过，版本元数据/模块/锁一致，文档检查通过。
+
+本轮已获准dev→PR→Windows CI与审查→合并，再复验同SHA main CI并走release环境正常审批创建v0.2.1草稿。正式公开、收费调用、现用Host迁移未授权/未执行；v0.2.0不变。最终SHA、CI/CD和草稿状态以PR及GitHub记录为准，不预填未来成功。

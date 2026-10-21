@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "zhenzhen-nanobanana-mcp"
-version = "0.2.0"
+version = "0.2.1"
 description = "Local ecommerce image generation and editing MCP server"
 readme = "README.md"
 license = "MIT"

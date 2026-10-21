@@ -22,3 +22,5 @@
 - [x] R01 2026-10-21按用户新授权重写README，取代先前保持初始化README的限制；保留LICENSE。README给出功能、已通过CI的固定SHA试用安装、统一密钥字段、无同步安装的启动入口、Host模板、6工具/模型矩阵及验收边界；MANUAL同步当前main与未发布状态，文档检查通过。交付与草稿范围按G06.6执行。
 
 - [x] D01 2026-10-21按用户新指示将默认安装目录仅改盘符为D:\MCP\zhenzhen-nanobanana-mcp，安装脚本父目录D:\MCP、四Host模板及README/MANUAL同步；明确v0.2.0旧脚本显式传入InstallRoot，历史路径和发行物不改。PowerShell AST确认默认值与目录深度，README/MANUAL共15段PowerShell示例解析通过，四模板路径一致；本地11阶段、71测试、构建、协议及独立安装通过。真实D盘目录安装/现用Host迁移未执行，无收费调用；本轮用户已授权推送dev、PR、CI与审查通过后合并，远端执行结果以对应PR及合入SHA CI为准，不触发发布。
+
+- [ ] V021 2026-10-21已获用户授权将包/模块/锁版本更新为0.2.1，纳入D盘默认路径和最新验收文档；经dev→PR→Windows CI及审查合并、同SHA main CI后正常审批创建草稿。暂不正式公开、不新增收费调用；v0.2.0保持不变。候选说明见docs/RELEASE-0.2.1.md，精确SHA/run/草稿与验收结论以GitHub记录为准，未完成前不预填成功。
