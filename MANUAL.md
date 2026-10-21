@@ -12,7 +12,7 @@
 | Python / 包管理 | 精确 `3.12.14` / 开发机 uv `0.12.9`，依赖由 `uv.lock` 锁定 |
 | 框架 / 底层 SDK | `fastmcp==4.1.0` / `mcp==2.3.0`；采用 FastMCP 是用户指定的项目例外 |
 | MCP 协议 | 子进程检查通过 `2026-07-28` 请求元数据模式和 `2025-11-25` 初始化握手模式；其他旧版本未测试 |
-| Host | Cherry Studio、Codex、Claude Code、DSH 模板；Codex CLI 0.153.0、Claude Code 2.1.258、DSH 0.2.0-rc.2 已核对帮助/schema；四个 GUI 业务联调未验证 |
+| Host | Cherry Studio、Codex、Claude Code、DSH 模板；Codex CLI 0.153.0、Claude Code 2.1.258、DSH 0.2.0-rc.2 已核对帮助/schema；Codex app-server、DSH CLI 隔离 profile 的 6 工具发现及免费调用已验证，四个 GUI 业务联调未验证 |
 | 系统 | Windows x64 + Python 3.12.14 已测；Bash/Zsh 示例为 POSIX 路径，Linux/macOS/WSL 未实测 |
 
 安装前需Git（使用`git --version`核对）及PowerShell7，公开仓库HTTPS访问无需GitHub令牌。联网初始化从 PyPI 下载锁定依赖，绘图联网访问 `https://ai.t8star.org`，图片下载访问公开 HTTP/HTTPS 地址。无离线缓存交付。uv 遵从其网络/注册表配置；业务 httpx 禁用环境代理，遵从系统 TLS 校验，不能通过关闭 TLS 来排障。
@@ -301,7 +301,7 @@ claude mcp get zhenzhen-nanobanana-mcp || exit 1
 
 核对本机 DSH `0.2.0-rc.2` schema：插件 `@deepseek-ai/dsh-mcp-client`，stdio，`serverName` 匹配 `^[A-Za-z0-9_-]{1,32}$`，支持 `toolCallTimeoutMs`。本模板关闭自动重连以减少中断时自动恢复的歧义；服务自身也不重发收费请求。当前 web profile 的 schema 导出报告已有无关 Loader 节点错误，本模板只做局部 schema 验证，不宣称完整 profile 通过。
 
-共用补丁如下。默认不包含密钥 env 或 `!!js` 凭据表达式，服务自己读取项目 `.env`。实际 Host 联调仍待验证。
+共用补丁如下。默认不包含密钥 env 或 `!!js` 凭据表达式，服务自己读取项目 `.env`。2026-10-21已验证本机DSH CLI隔离profile加载实际MCP桥接插件、发现6工具并免费调用；未验证现用web/desktop完整profile或GUI。Codex app-server也已通过同范围验收，详情见[Host验收记录](docs/HOST-VALIDATION.md)。
 
 <!-- template:templates/dsh.patch.yml.example -->
 
