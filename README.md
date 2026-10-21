@@ -6,6 +6,8 @@
 
 ## 安装版本与环境
 
+正在准备 **v0.2.2草稿**，纳入同步出图与只读等待；[候选说明](docs/RELEASE-0.2.2.md)列出范围。暂不公开，也不自动更新已有安装，以下成员安装继续使用已公开v0.2.1。
+
 成员使用已正式公开的 [v0.2.1](https://github.com/tsyecommercialdesigner-cloud/zhenzhen-nanobanana-mcp/releases/tag/v0.2.1)，对应提交 `09501092c369e2a314df757eece5fa8d7a38e64e` 和[成功的 Windows CI](https://github.com/tsyecommercialdesigner-cloud/zhenzhen-nanobanana-mcp/actions/runs/39534145510)。默认目录 `D:\MCP\zhenzhen-nanobanana-mcp`；当前开发分支及文档更新不自动改变成员安装或已发布附件。
 
 需要 Windows x64、Git、PowerShell 7、uv（已验证 `0.12.9`）。项目精确使用 Python `3.12.14`，由 uv 按锁定声明准备；FastMCP `4.1.0`、MCP SDK `2.3.0`。首次安装需访问 GitHub、Python 下载源和 PyPI；绘图及图片下载另需业务网络。Linux/macOS/WSL 尚未完成安装验收。
