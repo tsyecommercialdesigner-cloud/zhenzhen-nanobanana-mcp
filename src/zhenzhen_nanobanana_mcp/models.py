@@ -162,6 +162,8 @@ class ModelCatalog(Contract):
     capabilities: dict[str, list[str]] = Field(default_factory=dict)
     supported_endpoints: dict[str, list[str]] = Field(default_factory=dict)
     async_tasks: bool = True
+    sync_generation: bool = True
+    max_wait_timeout_seconds: int = 1200
     max_pending_tasks: int = 200
     reference_input_note: str = "Gemini/Chat多模态和Generations参考图编码未在本次收费实测；nano-banana-pro仅DALL·E，Edits重复image字段。"
 
@@ -206,3 +208,10 @@ class TaskPage(Contract):
     thread_id: str
     tasks: list[TaskResult]
     next_cursor: int | None = None
+
+
+WaitTimeout = Annotated[int, Field(strict=True, ge=1, le=1200)]
+
+
+class TaskWaitResult(TaskPage):
+    wait_timed_out: bool = False

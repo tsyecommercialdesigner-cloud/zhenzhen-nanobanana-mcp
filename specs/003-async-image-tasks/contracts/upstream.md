@@ -1,5 +1,7 @@
 # 当前上游与本地任务契约（0.2.0）
 
+后续[004同步入口](../../004-sync-image-tools/spec.md)复用此上游映射与共享账本，不增加供应商端点或重试。当前mcp.json注册快照已包含开发版generate_images/wait_image_tasks；本文原异步协议和发布版本历史保留。
+
 来源：[新 API 文档](../../../docs/API-ENDPOINT.md)，2026-10-20；四个分辨率变体按用户确认继承基础模型限制。001 旧契约仅保留历史。底层仍为同步绘图 API，异步队列由本地 MCP 实现，无供应商 task/job 查询端点。
 
 | 基础模型及其变体 | Gemini | Chat | Generations | Edits |

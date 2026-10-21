@@ -59,12 +59,16 @@ stdio 等待输入时没有普通输出属于正常状态。Host 负责启动子
 
 ## 使用流程
 
+开发工作区新增 `generate_images`（同步生成/编辑）和 `wait_image_tasks`（只等待已有任务），共8工具。下方固定标签安装的**已发布v0.2.1仍为原6工具异步版本**，新增能力尚未发布，也未更新现用D盘安装，见[同步功能规范](specs/004-sync-image-tools/spec.md)。
+
 1. 调用免费 `list_models` 核对配置，提供已核实的商品事实与参考图。
 2. 用免费 `plan_ecommerce_images` 规划并审阅提示词；出图前确认收费授权。
-3. 为每项提供稳定的 `(checkpointer, thread_id, task_id)`，一次 `submit_image_tasks` 登记任务。
-4. 通过 `get_image_tasks` 查询同一身份，成功后使用返回的图片绝对路径。
+3. 为每项提供稳定的 `(checkpointer, thread_id, task_id)`，选择异步 `submit_image_tasks` 立即登记，或开发版同步 `generate_images` 等待本组完成、图片落盘后返回。
+4. 异步任务用 `get_image_tasks` 立即查询；已有任务也可用开发版 `wait_image_tasks` 等待，成功后使用返回的图片绝对路径。
 
-相同身份与相同参数复用记录；参数冲突整组拒绝新增。`queued/preparing/running` 只表示尚未完成；`failed/unknown`、超时或取消不保证未收费，不自动换编号重试。防重范围为同一实际输出目录，保留 SQLite 与图片，不删除账本绕过幂等。其余工具为 `cancel_image_tasks` 和旧批次只读 `get_batch_result`；共 6 Tools、1 Prompt、1 Resource，详见[资源与参数](MANUAL.md#7-资源清单)。
+同步生成/等待的 `wait_timeout_seconds` 默认600，严格整数1–1200秒，包含排队时间；Host工具超时应更长并预留传输开销。等待超时返回 `isError=true`、`wait_timed_out=true` 及当前状态和已完成图片，只结束此次等待，后台继续。客户端取消也不主动取消队列任务，按原身份继续等待或查询，不能换编号重提；如果Host关闭整个MCP进程，仍受原有恢复规则约束。
+
+相同身份与相同参数跨同步/异步入口复用记录；参数冲突整组拒绝新增。`queued/preparing/running` 只表示尚未完成；`failed/unknown`、超时或取消不保证未收费，不自动换编号重试。防重范围为同一实际输出目录，保留 SQLite 与图片，不删除账本绕过幂等。其余工具为 `cancel_image_tasks` 和旧批次只读 `get_batch_result`；开发版共 8 Tools、1 Prompt、1 Resource，详见[资源与参数](MANUAL.md#7-资源清单)。
 
 默认模型 `gemini-nano-banana-2.1`，自动使用 DALL·E Generations；`nano-banana-pro` 仅 DALL·E，支持 Generations/Edits；Flash-lite 仅 Gemini/Chat。两个 banana 家族支持基础版及 `-2k/-4k`。显式分辨率长边 ≤1024 用基础版、≤2048 用 2k、>2048 用 4k；Flash-lite 不路由。此规则只选择模型，不保证精确输出像素，完整接口矩阵见手册。
 

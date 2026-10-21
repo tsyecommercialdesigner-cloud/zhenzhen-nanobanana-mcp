@@ -15,6 +15,8 @@ TOOLS = {
     "list_models",
     "plan_ecommerce_images",
     "submit_image_tasks",
+    "generate_images",
+    "wait_image_tasks",
     "get_image_tasks",
     "cancel_image_tasks",
     "get_batch_result",
@@ -62,6 +64,27 @@ async def check(mode: str, temporary: Path):
         assert catalog.structured_content["input_dirs"] == []
         assert len(catalog.structured_content["models"]) == 7
         assert catalog.structured_content["default_model"] == "gemini-nano-banana-2.1"
+        assert catalog.structured_content["sync_generation"] is True
+        for name in ("generate_images", "wait_image_tasks"):
+            schema = next(tool for tool in tools if tool.name == name).input_schema
+            assert schema["properties"]["wait_timeout_seconds"]["maximum"] == 1200
+        missing_wait = await client.call_tool(
+            "wait_image_tasks",
+            {"checkpointer": "smoke", "thread_id": "validation", "task_ids": ["missing"]},
+            raise_on_error=False,
+        )
+        assert missing_wait.is_error
+        invalid_wait = await client.call_tool(
+            "generate_images",
+            {
+                "checkpointer": "smoke",
+                "thread_id": "validation",
+                "tasks": [{"task_id": "never-submit", "prompt": "test"}],
+                "wait_timeout_seconds": 0,
+            },
+            raise_on_error=False,
+        )
+        assert invalid_wait.is_error
         submit_tool = next(tool for tool in tools if tool.name == "submit_image_tasks")
         assert submit_tool.input_schema["properties"]["tasks"]["maxItems"] == 12
         assert catalog.structured_content["capabilities"]["nano-banana-pro"] == ["dalle"]

@@ -1,5 +1,7 @@
 # 新API与异步批量图像任务
 
+后续范围：用户追加的[004同步工具](../004-sync-image-tools/spec.md)允许保留异步工具并新增可选同步入口，取代本功能最初“不公开同步generate_images”的入口限制。其余003上游、三元组、并发和防重契约保持；旧版request_id同步签名不恢复。
+
 依据：用户升级要求及docs/API-ENDPOINT.md（2026-10-20更新）；用户已确认保留四个2k/4k变体，继承基础模型接口限制；checkpointer为SQLite命名空间，不引入LangGraph。
 
 ## 范围与场景
