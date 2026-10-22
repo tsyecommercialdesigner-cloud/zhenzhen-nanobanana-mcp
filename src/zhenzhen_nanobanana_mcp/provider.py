@@ -2,6 +2,7 @@
 
 import asyncio
 import json
+import inspect
 import re
 from typing import Any
 
@@ -158,7 +159,9 @@ class Provider:
             raise BusinessError("绘图接口响应结构无效。") from exc
         checkpoint = getattr(spec, "_on_response", None)
         if checkpoint:
-            checkpoint(sources)
+            saved = checkpoint(sources)
+            if inspect.isawaitable(saved):
+                await saved
         return await self.collect(sources)
 
     async def collect(self, sources: list[str]) -> list[Media]:

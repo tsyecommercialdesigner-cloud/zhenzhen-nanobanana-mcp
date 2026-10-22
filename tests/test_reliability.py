@@ -459,6 +459,14 @@ class ReliabilityTests(unittest.IsolatedAsyncioTestCase):
             # Windows fsync under coverage is slower; keep every correctness check.
             async with asyncio.timeout(90 if sys.platform == "win32" else 30):
                 while True:
+                    with closing(sqlite3.connect(root / "metrics.sqlite3")) as db:
+                        active = db.execute("SELECT active FROM metrics").fetchone()[0]
+                    self.assertLessEqual(active, 5)
+                    if active == 5:
+                        (root / "first-wave-released").touch()
+                        break
+                    await asyncio.sleep(0.01)
+                while True:
                     rows = []
                     cursor = 0
                     while True:

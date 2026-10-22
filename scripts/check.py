@@ -49,7 +49,13 @@ def main():
     for name, command in steps:
         print(f"Checking {name}...", flush=True)
         with (reports / f"{name}.log").open("w", encoding="utf-8") as stream:
-            completed = subprocess.run(command, cwd=ROOT, stdout=stream, stderr=subprocess.STDOUT)
+            completed = subprocess.run(
+                command,
+                cwd=ROOT,
+                stdout=stream,
+                stderr=subprocess.STDOUT,
+                env={**os.environ, "PYTHONIOENCODING": "utf-8"},
+            )
         results.append({"check": name, "exit_code": completed.returncode})
         (reports / "checks.json").write_text(json.dumps(results, indent=2), encoding="utf-8")
         if completed.returncode:

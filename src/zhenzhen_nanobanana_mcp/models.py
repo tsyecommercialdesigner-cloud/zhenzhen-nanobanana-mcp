@@ -1,6 +1,6 @@
 """Public contracts shared by the planning and paid tools."""
 
-from typing import Annotated, Callable, Literal, cast
+from typing import Annotated, Awaitable, Callable, Literal, cast
 
 from pydantic import BaseModel, ConfigDict, Field, PrivateAttr, StringConstraints, model_validator
 
@@ -189,7 +189,7 @@ class ImageTask(ImageSpec):
     )
     _provider_key: str = PrivateAttr(default="")
     _on_post_attempt: Callable[[], None] | None = PrivateAttr(default=None)
-    _on_response: Callable[[list[str]], None] | None = PrivateAttr(default=None)
+    _on_response: Callable[[list[str]], Awaitable[None] | None] | None = PrivateAttr(default=None)
     task_id: ScopeId
     model: ModelName = "gemini-nano-banana-2.1"
     api_format: ApiChoice = "auto"

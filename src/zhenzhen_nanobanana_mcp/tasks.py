@@ -34,6 +34,16 @@ HEARTBEAT_SECONDS = 5
 LOG = logging.getLogger(__name__)
 
 
+async def durable_io(function, *args, **kwargs):
+    """Keep blocking disk work off stdio's loop; drain it before releasing ownership."""
+    pending = asyncio.create_task(asyncio.to_thread(function, *args, **kwargs))
+    try:
+        return await asyncio.shield(pending)
+    except asyncio.CancelledError:
+        await asyncio.gather(pending, return_exceptions=True)
+        raise
+
+
 class TaskQueue:
     def __init__(
         self,
@@ -517,11 +527,11 @@ class TaskQueue:
             json.dumps([checkpointer, thread_id, task_id, fingerprint], ensure_ascii=False).encode()
         ).hexdigest()
 
-    def checkpoint(self, row, sources):
+    async def checkpoint(self, row, sources):
         data = json.dumps(sources, ensure_ascii=False).encode()
         digest = hashlib.sha256(data).hexdigest()
         path = self.storage.safe_output(self.storage.root / "task-responses" / f"{digest}.json")
-        publish(path, data)
+        await durable_io(publish, path, data)
         with self.connect() as db:
             changed = db.execute(
                 "UPDATE image_tasks SET response_path=?,response_sha256=?,state='recovering',recovery_attempts=recovery_attempts+1,cycle_attempts=1,safe_retry=1,updated=? WHERE seq=? AND owner=? AND state='running' AND EXISTS(SELECT 1 FROM task_owners WHERE owner=? AND heartbeat>=?)",
@@ -558,7 +568,7 @@ class TaskQueue:
             path = self.storage.safe_output(
                 self.storage.root / "task-inputs" / (ref.digest + ref.suffix)
             )
-            publish(path, ref.data)
+            await durable_io(publish, path, ref.data)
             paths.append(str(path))
         with self.connect() as db:
             db.execute(
@@ -638,9 +648,9 @@ class TaskQueue:
                         if not changed:
                             raise BusinessError("任务已取消或租约失效；未发送新的绘图请求。")
 
-                    def on_response(sources):
+                    async def on_response(sources):
                         nonlocal checkpointed
-                        self.checkpoint(row, sources)
+                        await self.checkpoint(row, sources)
                         checkpointed = True
 
                     task._provider_key = row["provider_key"] or self.key_for(
@@ -652,7 +662,7 @@ class TaskQueue:
                         task, references, row["actual_model"], row["api_format"]
                     )
                     if not checkpointed:
-                        on_response([m.data_url for m in media])
+                        await on_response([m.data_url for m in media])
                 with self.connect(readonly=True) as db:
                     if not db.execute(
                         "SELECT 1 FROM image_tasks WHERE seq=? AND owner=? AND state='recovering'",
@@ -671,7 +681,7 @@ class TaskQueue:
                     if index < len(images) and images[index]["sha256"] != item.digest:
                         raise BusinessError("原响应图片内容已改变，不能替换已有结果。")
                     path = self.storage.safe_output(folder / f"{index + 1:02}{item.suffix}")
-                    publish(path, item.data, repair=bool(row["repair_files"]))
+                    await durable_io(publish, path, item.data, repair=bool(row["repair_files"]))
                     saved = SavedImage(
                         path=str(path),
                         mime_type=item.mime,

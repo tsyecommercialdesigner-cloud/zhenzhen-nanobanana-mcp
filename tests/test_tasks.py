@@ -5,6 +5,7 @@ import sys
 import os
 import sqlite3
 import subprocess
+import threading
 import time
 import unittest
 from concurrent.futures import ThreadPoolExecutor
@@ -22,7 +23,7 @@ from zhenzhen_nanobanana_mcp.config import BusinessError, Settings
 from zhenzhen_nanobanana_mcp.media import decode_image
 from zhenzhen_nanobanana_mcp.models import ImageTask, TaskPage
 from zhenzhen_nanobanana_mcp.server import create_server
-from zhenzhen_nanobanana_mcp.tasks import TaskQueue
+from zhenzhen_nanobanana_mcp.tasks import TaskQueue, durable_io
 
 
 class TaskTests(unittest.IsolatedAsyncioTestCase):
@@ -352,6 +353,29 @@ class TaskTests(unittest.IsolatedAsyncioTestCase):
             )
         await self.queue.execute(row)
         self.queue.storage.provider.render.assert_not_awaited()
+
+    async def test_disk_publication_yields_loop_and_cancellation_drains_writer(self):
+        entered, release, finished = threading.Event(), threading.Event(), threading.Event()
+
+        def blocking_write():
+            entered.set()
+            release.wait(2)
+            finished.set()
+
+        writer = asyncio.create_task(durable_io(blocking_write))
+        try:
+            self.assertTrue(await asyncio.to_thread(entered.wait, 1))
+            self.assertFalse(finished.is_set())
+            writer.cancel()
+            await asyncio.sleep(0.02)
+            self.assertFalse(writer.done(), "cancel must not detach an active file writer")
+            release.set()
+            with self.assertRaises(asyncio.CancelledError):
+                await writer
+            self.assertTrue(finished.is_set())
+        finally:
+            release.set()
+            await asyncio.gather(writer, return_exceptions=True)
 
     async def test_schema_setup_is_not_repeated_by_hot_path(self):
         statements = []
