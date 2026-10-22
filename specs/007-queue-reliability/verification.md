@@ -24,3 +24,9 @@ SQLite本次负载报告test-reports/sqlite-load.json：jobs=200、processes=3�
 当前运行环境未显式设置NANOBANANA_CONCURRENCY/MAX_PENDING_TASKS/SAFE_ATTEMPTS，使用代码默认5/200/3。已有成员安装仍须在后续发布升级后使用新功能；本次未替用户改写旧环境配置或重启私人服务。
 
 复现：按005验证记录初始化本环境缓存/PowerShell路径，运行 `uv run --no-sync python scripts/check.py`。独立专项：`uv run --no-sync python -m unittest discover -s tests -p test_reliability.py`；基准会生成本次新的sqlite-load.json，数值随机器而变。测试不需要真实密钥且禁止添加收费探针。
+
+## 2026-10-22：正式v0.3.0真实业务补充
+
+先前受控替身/200项负载与故障注入结论保持原范围。后续另获用户授权，在正式v0.3.0/c6121a7的当前Codex会话执行15项真实生成/编辑；详见[逐任务与逐图验收](../../docs/LIVE-V0.3.0-ACCEPTANCE.md)。3项和10项批次分别观察3/5项同时running，落盘及同身份重放无新增POST；十项计数保持10→10，15项图片解析、大小、SHA256和路径校验通过。该并发证据是MCP/本地账本状态，不是供应商内部调度量测。
+
+补充QR03/QR05的真实文件摘要与幂等复用证据，不将其扩展为QR04真实故障、重启恢复或供应商账单验收。checkpoint()正常保存响应也递增recovery_attempts，因此值1不是一次故障或重复POST的证据。原始私有请求/日志、账本、图片和来源检查点保留本机，公共文档仅列测试身份、相对路径、摘要与边界。本次归档无新增收费请求，不修改Host、D盘安装、依赖或Release。
