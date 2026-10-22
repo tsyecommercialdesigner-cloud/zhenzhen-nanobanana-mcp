@@ -1,6 +1,6 @@
 # 仓库门禁与草稿发布
 
-目标仓库：https://github.com/tsyecommercialdesigner-cloud/zhenzhen-nanobanana-mcp ，默认分支main，候选集成分支dev。执行范围与六步标准见 [DELIVERY-PLAN.md](DELIVERY-PLAN.md)，任务状态唯一来源为 [002/tasks.md](../specs/002-github-distribution/tasks.md)。Windows是当前唯一CI平台；本服务公开6工具、1Prompt、1Resource。初始迁移保留远端README/LICENSE；用户随后授权重写README，现提供快速入门，MANUAL维护详细步骤，LICENSE继续保留。
+目标仓库：https://github.com/tsyecommercialdesigner-cloud/zhenzhen-nanobanana-mcp ，默认分支main，候选集成分支dev。执行范围与六步标准见 [DELIVERY-PLAN.md](DELIVERY-PLAN.md)，任务状态唯一来源为 [002/tasks.md](../specs/002-github-distribution/tasks.md)。Windows是当前唯一CI平台；本服务当前公开21工具、6 Prompts、9 Resources（初始迁移时为6/1/1）。初始迁移保留远端README/LICENSE；用户随后授权重写README，现提供快速入门，MANUAL维护详细步骤，LICENSE继续保留。
 
 ## dev、PR与Windows CI
 
@@ -47,3 +47,7 @@ main初始SHA ce7ce74a357782fcda820174c60a9c41090d7fa9只有README/LICENSE，不
 ## v0.3.0 发布授权（2026-10-22）
 
 用户已授权同步dev并在CI确认后进行Release，明确选择v0.3.0；该授权包括草稿核对后的正式公开。保留原始验收证据，不新增收费调用、不修改现用Host配置或D盘安装。先由现有受控CD生成新标签/草稿及附件，正常执行release环境审批，核对版本/精确SHA/main CI/哈希后公开，再在独立目录验证发布版本；不修改旧Release。新版范围和未验证项见[发布说明](RELEASE-0.3.0.md)。
+
+## v0.3.1 修复发布授权（2026-10-22）
+
+用户在 PR #26 修复及精确 main CI 通过后授权“按流程 Release 这次的修复”。按补丁版本 v0.3.1 经 dev→PR→Windows CI与审查→合并、同 SHA main CI、受控 CD 正常环境审批创建草稿，核对同一附件后正式公开并在独立目录安装/协议验收。本轮不修改现用 Host/D 盘安装、不新增收费调用或覆盖旧 Release，保留原始失败和业务证据；见 [发布说明](RELEASE-0.3.1.md)。

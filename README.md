@@ -1,8 +1,8 @@
 # zhenzhen-nanobanana-mcp
 
-v0.3.0 面向家居日用电商，提供 **21 Tools、9 Resources、6 Prompts**：保留同步/异步出图，加入[设计研讨与确认](docs/ECOMMERCE-DESIGN.md)、[共享规范竞品复刻](docs/REFERENCE-REPLICA-UPGRADE.md)、[同款整套模板](docs/PRODUCT-SUITE.md)及[20项/5并发可靠队列](docs/QUEUE-RELIABILITY.md)。设计确认与收费授权分开，预览和执行使用同一已校验提示词。
+v0.3.1 面向家居日用电商，保留 **21 Tools、9 Resources、6 Prompts** 及同步/异步出图。本补丁修复队列热路径重复结构事务、阻塞 stdio 的持久文件写入和 Windows SQLite 文件占用；不改变公开工具、模型或收费防重契约。功能见[设计工作流](docs/ECOMMERCE-DESIGN.md)、[竞品复刻](docs/REFERENCE-REPLICA-UPGRADE.md)、[同款整套模板](docs/PRODUCT-SUITE.md)和[队列可靠性](docs/QUEUE-RELIABILITY.md)。
 
-发布状态以[正式 Release](https://github.com/tsyecommercialdesigner-cloud/zhenzhen-nanobanana-mcp/releases/tag/v0.3.0)及其资格记录为准；草稿或记录缺失时安装器停止。现用 D 盘安装仍为 v0.2.2，本次发布不自动更新它。原始验收证据、历史版本和图片保持不变。
+发布状态以[正式 Release](https://github.com/tsyecommercialdesigner-cloud/zhenzhen-nanobanana-mcp/releases/tag/v0.3.1)及其资格记录为准；草稿或记录缺失时安装器停止。现用 D 盘安装仍为 v0.3.0，本次发布不自动更新它。原始验收证据、历史版本和图片保持不变。
 
 用于家居日用百货电商绘图的本地 MCP Server：商品主图、详情页、场景图、营销海报和参考图编辑。Agent 一次可提交 1–20 项任务，选择异步立即返回，或同步等待完成并落盘后返回；默认并发 5，图片自动保存到本机。生成和编辑会产生供应商费用。
 
@@ -10,7 +10,7 @@ v0.3.0 面向家居日用电商，提供 **21 Tools、9 Resources、6 Prompts**�
 
 ## 安装版本与环境
 
-成员安装目标为 v0.3.0，默认目录 `D:\MCP\zhenzhen-nanobanana-mcp`。精确标签 SHA 与成功 main CI 来自正式附件 `release-eligibility.json`；下面的示例逐项核对，不猜测提交。发布前的已验收代码基线为 `856e362285c0a1255828c7a26d6bca59930d037a`，它不是未来发布标签的提交。
+成员安装目标为 v0.3.1，默认目录 `D:\MCP\zhenzhen-nanobanana-mcp`。精确标签 SHA 与成功 main CI 来自正式附件 `release-eligibility.json`；下面的示例逐项核对，不猜测提交。本次修复的已验收代码基线为 `e0a80b53accce98ab8819e2812d871ceb23a1d7a`，它不作为本版最终发布标签的提交。
 
 需要 Windows x64、Git、PowerShell 7、uv（已验证 `0.12.9`）。项目精确使用 Python `3.12.14`，由 uv 按锁定声明准备；FastMCP `4.1.0`、MCP SDK `2.3.0`。首次安装需访问 GitHub、Python 下载源和 PyPI；绘图及图片下载另需业务网络。Linux/macOS/WSL 尚未完成安装验收。
 
@@ -23,12 +23,12 @@ $ErrorActionPreference = 'Stop'
 $ProjectDir = 'D:\MCP\zhenzhen-nanobanana-mcp'
 if (Test-Path -LiteralPath $ProjectDir) { throw '目录已存在，请按手册更新，不能覆盖。' }
 New-Item -ItemType Directory -Path (Split-Path -Parent $ProjectDir) -Force | Out-Null
-git clone --branch v0.3.0 --single-branch 'https://github.com/tsyecommercialdesigner-cloud/zhenzhen-nanobanana-mcp.git' $ProjectDir
+git clone --branch v0.3.1 --single-branch 'https://github.com/tsyecommercialdesigner-cloud/zhenzhen-nanobanana-mcp.git' $ProjectDir
 if ($LASTEXITCODE -ne 0) { throw '仓库获取失败。' }
-$Evidence = & (Join-Path $ProjectDir 'scripts\install-from-github.ps1') -Tag v0.3.0 -VerifyOnly
+$Evidence = & (Join-Path $ProjectDir 'scripts\install-from-github.ps1') -Tag v0.3.1 -VerifyOnly
 $ExpectedCommit = $Evidence.Commit
 $ActualCommit = git -C $ProjectDir rev-parse HEAD
-if ($LASTEXITCODE -ne 0 -or $ActualCommit -cne $ExpectedCommit -or $Evidence.Tag -cne 'v0.3.0') { throw '正式发布记录不匹配。' }
+if ($LASTEXITCODE -ne 0 -or $ActualCommit -cne $ExpectedCommit -or $Evidence.Tag -cne 'v0.3.1') { throw '正式发布记录不匹配。' }
 uv --directory $ProjectDir sync --locked --no-dev
 if ($LASTEXITCODE -ne 0) { throw '运行依赖安装失败。' }
 pwsh -NoProfile -File (Join-Path $ProjectDir 'scripts\smoke-test.ps1')
@@ -64,7 +64,7 @@ stdio 等待输入时没有普通输出属于正常状态。Host 负责启动子
 
 ## 使用流程
 
-v0.3.0 提供 21 个工具，支持同步与异步出图，详见[资源与参数](MANUAL.md#7-资源清单)：
+v0.3.1 提供 21 个工具，支持同步与异步出图，详见[资源与参数](MANUAL.md#7-资源清单)：
 
 | 工具 | 用途 |
 |---|---|
@@ -105,7 +105,7 @@ v0.3.0 提供 21 个工具，支持同步与异步出图，详见[资源与参�
 
 [21工具隔离Host验收](docs/HOST-VALIDATION-PR19.md)与[DSH Agent实际看图](docs/DSH-VISION-HOST-VALIDATION.md)记录真实Host后端验证。原最小DSH profile因缺附件/视觉路由未通过看图；补齐后使用codeproxy-anthropic / claude-sonnet-5-5完成CLI Agent识图，Desktop GUI仍未验证。
 
-历史[16图业务验收](specs/010-live-ecommerce-validation/verification.md)只证明相应模型/接口的流程和文件校验，7图Agent通过、9图需修订，不等于全部可上架。新版本发布说明及当前边界见[v0.3.0](docs/RELEASE-0.3.0.md)；旧[v0.2.2安装验收](docs/RELEASE-0.2.2-ACCEPTANCE.md)与[D盘记录](docs/LOCAL-V0.2.2-UPGRADE-ACCEPTANCE.md)保留原范围。全部模型/变体、真实故障恢复及Desktop GUI不因发布而视为通过。
+历史[16图业务验收](specs/010-live-ecommerce-validation/verification.md)只证明相应模型/接口的流程和文件校验，7图Agent通过、9图需修订，不等于全部可上架。新版本发布说明及当前边界见[v0.3.1](docs/RELEASE-0.3.1.md)；旧[v0.2.2安装验收](docs/RELEASE-0.2.2-ACCEPTANCE.md)与[D盘记录](docs/LOCAL-V0.2.2-UPGRADE-ACCEPTANCE.md)保留原范围。全部模型/变体、真实故障恢复及Desktop GUI不因发布而视为通过。
 
 维护者遵循分支 → PR → Windows CI → 评审 → 合并；发布单独授权，先创建草稿，核对后才公开。开发安装使用 `uv sync --locked`、检查使用 `uv run --no-sync python scripts/check.py`；成员只需锁定运行依赖。任务状态见[交付任务](specs/002-github-distribution/tasks.md)。
 
