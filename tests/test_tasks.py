@@ -369,6 +369,9 @@ class TaskTests(unittest.IsolatedAsyncioTestCase):
             writer.cancel()
             await asyncio.sleep(0.02)
             self.assertFalse(writer.done(), "cancel must not detach an active file writer")
+            writer.cancel()
+            await asyncio.sleep(0.02)
+            self.assertFalse(writer.done(), "shutdown cancellation must also drain the writer")
             release.set()
             with self.assertRaises(asyncio.CancelledError):
                 await writer

@@ -40,7 +40,17 @@ async def durable_io(function, *args, **kwargs):
     try:
         return await asyncio.shield(pending)
     except asyncio.CancelledError:
-        await asyncio.gather(pending, return_exceptions=True)
+        # Shutdown can cancel a writer already draining after a tool timeout.
+        # Repeated cancellation must not detach its still-running OS thread.
+        while not pending.done():
+            try:
+                await asyncio.shield(pending)
+            except asyncio.CancelledError:
+                continue
+            except Exception:
+                break
+        if not pending.cancelled():
+            pending.exception()  # Retrieve a write failure while propagating cancellation.
         raise
 
 
