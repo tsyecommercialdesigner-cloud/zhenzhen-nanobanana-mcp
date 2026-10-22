@@ -4,6 +4,7 @@ import asyncio
 import io
 import hashlib
 import sys
+import os
 from pathlib import Path
 
 from PIL import Image
@@ -16,6 +17,7 @@ from zhenzhen_nanobanana_mcp.tasks import TaskQueue
 
 def main():
     root = Path(sys.argv[1])
+    (root / f"process-{os.getpid()}.pid").write_text(str(os.getpid()), encoding="ascii")
     settings = Settings(
         api_key="stdio-fixture-not-real", output_dir=root / "output", timeout=10, concurrency=2
     )

@@ -42,6 +42,10 @@ async def main():
             stream.write(str(os.getpid()))
         change_active(1)
         try:
+            # Hold the first wave until the parent observes all five occupied slots.
+            # A fixed 20 ms sleep cannot prove saturation on a busy Windows runner.
+            while not (root / "first-wave-released").exists():
+                await asyncio.sleep(0.01)
             await asyncio.sleep(0.02)
             return [media]
         finally:

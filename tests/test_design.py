@@ -317,7 +317,10 @@ class DesignTests(unittest.IsolatedAsyncioTestCase):
         done = await self.queue.wait(
             "ecommerce-design", "large", [f"r1-{p.panel_id}" for p in record.panels], 5
         )
-        self.assertTrue(all(t.status == "succeeded" for t in done.tasks))
+        self.assertTrue(
+            all(t.status == "succeeded" for t in done.tasks),
+            [(t.task_id, t.status, t.error) for t in done.tasks],
+        )
         self.assertEqual(self.design.progress("large").unsubmitted_panel_ids, [])
         self.assertEqual(self.queue.storage.provider.render.await_count, 15)
 
