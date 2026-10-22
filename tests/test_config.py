@@ -162,10 +162,10 @@ class CredentialTests(unittest.TestCase):
     def test_task_queue_configuration_bounds_and_defaults(self):
         self.write("ZHENZHEN_NANOBANANA_API_KEY=test-not-real\n")
         defaults = Settings.from_env()
-        self.assertEqual((defaults.concurrency, defaults.max_pending_tasks), (4, 200))
+        self.assertEqual((defaults.concurrency, defaults.max_pending_tasks), (5, 200))
         for key, valid, invalid in (
-            ("NANOBANANA_CONCURRENCY", ("1", "4", "10"), ("0", "11", "1.5", "")),
-            ("NANOBANANA_MAX_PENDING_TASKS", ("12", "200", "1000"), ("11", "1001", "NaN", "")),
+            ("NANOBANANA_CONCURRENCY", ("1", "5", "20"), ("0", "21", "1.5", "")),
+            ("NANOBANANA_MAX_PENDING_TASKS", ("20", "200", "1000"), ("19", "1001", "NaN", "")),
         ):
             for value in valid:
                 with patch.dict(os.environ, {key: value}):

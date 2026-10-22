@@ -1,0 +1,243 @@
+{
+  "design_id": "basket-suite-demo",
+  "expected_revision": 0,
+  "brief": {
+    "product_name": "收纳篮",
+    "platform": "用户指定的测试平台",
+    "audience": "需要桌面收纳的用户",
+    "objective": "展示用途、材质与规格差异",
+    "product_images": [
+      "/absolute/path/blue-basket.png"
+    ],
+    "visual_observations": "蓝色圆篮、织纹表面",
+    "reference_choice": "skip",
+    "reference_reason": "用户选择按实物定风格，本轮不用对标",
+    "facts": [
+      {
+        "fact_id": "usage",
+        "label": "桌面收纳",
+        "value": "收纳桌面小物",
+        "source": "用户核实",
+        "category": "usage"
+      },
+      {
+        "fact_id": "material",
+        "label": "棉麻材质",
+        "value": "棉麻",
+        "source": "用户商品资料",
+        "category": "material"
+      }
+    ],
+    "variants": [
+      {
+        "sku_id": "blue",
+        "label": "蓝色款",
+        "attributes": {
+          "颜色": "蓝色",
+          "材质": "棉麻"
+        },
+        "product_images": [
+          "/absolute/path/blue-basket.png"
+        ],
+        "fact_ids": [
+          "usage",
+          "material"
+        ]
+      },
+      {
+        "sku_id": "red",
+        "label": "红色款",
+        "attributes": {
+          "材质": "棉麻",
+          "颜色": "红色"
+        },
+        "product_images": [
+          "/absolute/path/red-basket.png"
+        ],
+        "visual_observations": "红色圆篮，织纹表面",
+        "fact_ids": [
+          "usage"
+        ]
+      }
+    ],
+    "suite": {
+      "frames": [
+        {
+          "panel_id": "main",
+          "kind": "main",
+          "template_id": "main.hero",
+          "purpose": "说明真实用途",
+          "title": "桌面收纳",
+          "subtitle": "收纳桌面小物",
+          "visual": "展示实物正面与侧面纹理",
+          "fact_ids": [
+            "usage"
+          ]
+        },
+        {
+          "panel_id": "d0",
+          "kind": "detail",
+          "template_id": "detail.opening",
+          "purpose": "说明真实用途",
+          "title": "桌面收纳",
+          "subtitle": "收纳桌面小物",
+          "visual": "展示实物正面与侧面纹理",
+          "fact_ids": [
+            "usage"
+          ]
+        },
+        {
+          "panel_id": "d1",
+          "kind": "detail",
+          "template_id": "detail.solution",
+          "purpose": "说明真实用途",
+          "title": "桌面收纳",
+          "subtitle": "收纳桌面小物",
+          "visual": "展示实物正面与侧面纹理",
+          "fact_ids": [
+            "usage"
+          ]
+        },
+        {
+          "panel_id": "d2",
+          "kind": "detail",
+          "template_id": "detail.feature",
+          "purpose": "说明真实用途",
+          "title": "桌面收纳",
+          "subtitle": "收纳桌面小物",
+          "visual": "展示实物正面与侧面纹理",
+          "fact_ids": [
+            "usage"
+          ]
+        },
+        {
+          "panel_id": "d3",
+          "kind": "detail",
+          "template_id": "detail.material",
+          "purpose": "说明真实用途",
+          "title": "桌面收纳",
+          "subtitle": "收纳桌面小物",
+          "visual": "展示实物正面与侧面纹理",
+          "fact_ids": [
+            "material"
+          ]
+        },
+        {
+          "panel_id": "d4",
+          "kind": "detail",
+          "template_id": "detail.usage",
+          "purpose": "说明真实用途",
+          "title": "桌面收纳",
+          "subtitle": "收纳桌面小物",
+          "visual": "展示实物正面与侧面纹理",
+          "fact_ids": [
+            "usage"
+          ]
+        },
+        {
+          "panel_id": "d5",
+          "kind": "detail",
+          "template_id": "detail.feature",
+          "purpose": "说明真实用途",
+          "title": "桌面收纳",
+          "subtitle": "收纳桌面小物",
+          "visual": "展示实物正面与侧面纹理",
+          "fact_ids": [
+            "usage"
+          ]
+        },
+        {
+          "panel_id": "d6",
+          "kind": "detail",
+          "template_id": "detail.proof",
+          "purpose": "说明真实用途",
+          "title": "桌面收纳",
+          "subtitle": "收纳桌面小物",
+          "visual": "展示实物正面与侧面纹理",
+          "fact_ids": [
+            "usage"
+          ]
+        },
+        {
+          "panel_id": "d7",
+          "kind": "detail",
+          "template_id": "detail.closing",
+          "purpose": "说明真实用途",
+          "title": "桌面收纳",
+          "subtitle": "收纳桌面小物",
+          "visual": "展示实物正面与侧面纹理",
+          "fact_ids": [
+            "usage"
+          ]
+        },
+        {
+          "panel_id": "blue",
+          "kind": "sku",
+          "template_id": "sku.variant",
+          "purpose": "说明真实用途",
+          "title": "蓝色款",
+          "subtitle": "收纳桌面小物",
+          "visual": "展示实物正面与侧面纹理",
+          "fact_ids": [
+            "usage"
+          ],
+          "sku_id": "blue"
+        },
+        {
+          "panel_id": "red",
+          "kind": "sku",
+          "template_id": "sku.variant",
+          "purpose": "说明真实用途",
+          "title": "红色款",
+          "subtitle": "收纳桌面小物",
+          "visual": "展示实物正面与侧面纹理",
+          "fact_ids": [
+            "usage"
+          ],
+          "sku_id": "red"
+        }
+      ],
+      "style": {
+        "palette": {
+          "primary": "#245A50",
+          "secondary": "#DDE9E2",
+          "accent": "#B55A30",
+          "background": "#FAF8F2",
+          "text": "#202B28",
+          "usage": "背景用background，标题与标签用primary，正文用text，强调仅少量accent；不改变商品固有颜色。"
+        },
+        "typography": {
+          "font_family": "Noto Sans CJK SC",
+          "fallback_families": [
+            "思源黑体",
+            "sans-serif"
+          ],
+          "title_weight": 700,
+          "subtitle_weight": 500,
+          "body_weight": 400,
+          "alignment": "left",
+          "font_rights_note": "发布前核实所用实际字体的授权；模型生成字形仍需人工检查。"
+        },
+        "hierarchy": {
+          "title_pct": 5.0,
+          "subtitle_pct": 3.2,
+          "body_pct": 2.4,
+          "safe_margin_pct": 5.0,
+          "product_scale_pct": 65.0,
+          "title_area_pct": 20.0,
+          "spacing_unit_pct": 2.0
+        },
+        "copywriting": {
+          "tone": "简洁、克制、真实，以用户能理解的利益点表达。",
+          "sentence_pattern": "短标题聚焦一个信息点，副标题解释用途，正文只补充有依据的细节。",
+          "terminology": {},
+          "forbidden_terms": []
+        },
+        "aesthetic": "自然、干净的商业产品摄影，真实材质和清楚轮廓。",
+        "lighting": "柔和侧前方主光，统一阴影方向、反差与色温。",
+        "background": "干净低干扰的背景，同组使用一致的纹理语言。",
+        "rendering": "保留实物细节，避免塑料化、畸变和过度锐化。"
+      }
+    }
+  }
+}

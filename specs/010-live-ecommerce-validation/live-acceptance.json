@@ -1,0 +1,148 @@
+{
+  "date_utc": "2026-10-21",
+  "product": "Zippo HeatBank 9s",
+  "official_source": "https://www.zippo.com/products/heatbank-9s-rechargeable-hand-warmer-box",
+  "model": "gemini-nano-banana-2.1",
+  "api_format": "gemini",
+  "endpoint": "/v1beta/models/gemini-nano-banana-2.1:generateContent",
+  "counts": {
+    "main": 5,
+    "detail": 8,
+    "sku": 3
+  },
+  "actual_post_attempts": 16,
+  "automatic_post_retries": 0,
+  "observed_peak_running": 5,
+  "completed_tasks": 16,
+  "saved_images": 16,
+  "sha256_verified": 16,
+  "unsubmitted_panels": 0,
+  "duplicate_submission_extra_posts": 0,
+  "design_digest": "f6078c7073dec963e693b9f76e4cb63a86b1b824fabdd42dbb57424637ff504d",
+  "style_digest": "2f4c0977ebb2cb8fcce0eaf8c0aced44e71aa88f4c0322b0eed285d45aaf8ef8",
+  "visual_review": {
+    "records": 16,
+    "outcomes": {
+      "agent_passed": 7,
+      "revise": 9
+    },
+    "publication_approved": false,
+    "automatic_redraws": 0
+  },
+  "transport": "Real Provider and real MCP stdio; explicit cloud HTTPS proxy with TLS verification; Gemini inline image response",
+  "verification_scope": "This model/endpoint and this demo only; other live model routes, actual vendor invoice amount and exact pixel/font guarantees are not verified.",
+  "images": [
+    {
+      "panel_id": "m01",
+      "width": 1024,
+      "height": 1024,
+      "sha256": "df2cde802fca151849b251a6a01a22c178fe828f66c67d705b406b456c169532",
+      "post_attempts": 1
+    },
+    {
+      "panel_id": "m02",
+      "width": 1024,
+      "height": 1024,
+      "sha256": "fe523a6a54ed876cc1df411f139365ea6d2578955b0182f8030f942e6fbef7a0",
+      "post_attempts": 1
+    },
+    {
+      "panel_id": "m03",
+      "width": 1024,
+      "height": 1024,
+      "sha256": "7f953f1fcebd7a18397760c2a6089e418ad2bcaf48887514311f852067451458",
+      "post_attempts": 1
+    },
+    {
+      "panel_id": "m04",
+      "width": 1024,
+      "height": 1024,
+      "sha256": "90e270da9d4888c234205f7bf2e47cc69b3abc197fa63ab5684674d9ca05c545",
+      "post_attempts": 1
+    },
+    {
+      "panel_id": "m05",
+      "width": 1024,
+      "height": 1024,
+      "sha256": "662bc681d507c0207aeb248566b7491053ee97d947c6826c9d20d9cdf5c42d77",
+      "post_attempts": 1
+    },
+    {
+      "panel_id": "d01",
+      "width": 896,
+      "height": 1200,
+      "sha256": "8540b96cc1c333768c4284d3e4a20c72e833e1fcc325361c8303645ff4e6b105",
+      "post_attempts": 1
+    },
+    {
+      "panel_id": "d02",
+      "width": 896,
+      "height": 1200,
+      "sha256": "a18e452c9718d47ac2d0953e03699ceee0d167d06d6a194a0460ea2dc97d8341",
+      "post_attempts": 1
+    },
+    {
+      "panel_id": "d03",
+      "width": 896,
+      "height": 1200,
+      "sha256": "12ae0c6512274a62c7dfcbf2f7a47cb04df85996feec25c518c3965e39715c4a",
+      "post_attempts": 1
+    },
+    {
+      "panel_id": "d04",
+      "width": 896,
+      "height": 1200,
+      "sha256": "3e76bf2854deaa2a3ea1d0cac096a28f230b4197dc25856144e121bb33e21a2c",
+      "post_attempts": 1
+    },
+    {
+      "panel_id": "d05",
+      "width": 896,
+      "height": 1200,
+      "sha256": "e7ab62895ee713d6679ca6c68a92d3eb8abedd92a6ac9bf0a7e337483b0f8e1b",
+      "post_attempts": 1
+    },
+    {
+      "panel_id": "d06",
+      "width": 896,
+      "height": 1200,
+      "sha256": "ba2b1087fdc31b985f0b5bdd4bf041856a454a40d10e65232ef43ad753ffa265",
+      "post_attempts": 1
+    },
+    {
+      "panel_id": "d07",
+      "width": 896,
+      "height": 1200,
+      "sha256": "9ee83ce8a5868101eca12ce046ed2df2b028bd8b636b050cbf79a599834a6446",
+      "post_attempts": 1
+    },
+    {
+      "panel_id": "d08",
+      "width": 896,
+      "height": 1200,
+      "sha256": "04370ccd252cd61070cfe50e9053ff217715f765d438010010ea9222e290d7e9",
+      "post_attempts": 1
+    },
+    {
+      "panel_id": "sku-black",
+      "width": 1024,
+      "height": 1024,
+      "sha256": "b1d884d710007cb10f52da9d1b312898e554e5df3971c0427880aa30680ad339",
+      "post_attempts": 1
+    },
+    {
+      "panel_id": "sku-silver",
+      "width": 1024,
+      "height": 1024,
+      "sha256": "2c811ed030f9111ac1824301b90878461742d6ef9afb349a24cdee21c673f22c",
+      "post_attempts": 1
+    },
+    {
+      "panel_id": "sku-blue",
+      "width": 1024,
+      "height": 1024,
+      "sha256": "a0089f2cdac53854de18198d71213c99955274f65e39c4f17338e0aa3cdb0ba7",
+      "post_attempts": 1
+    }
+  ]
+}

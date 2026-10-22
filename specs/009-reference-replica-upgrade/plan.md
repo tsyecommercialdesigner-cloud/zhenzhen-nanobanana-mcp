@@ -1,0 +1,9 @@
+# 实施方案
+
+新增ReferenceReplicaSpec与ReferenceReplicaFrame，单一reference_image/analysis/adaptations保留完整逆向分析；style复用SuiteStyle且必须由Agent明确提供。逐图继承SuiteFrame并增加ReferenceComposition（图形结构、产品表现、物体布局/文本排列/互动关系）和可选LogicalStructure，禁用逐图配色/光线/字体字段。scope=series允许单图或同类型系列，product_suite复用008完整叙事和数量校验。
+
+DesignBrief新增可选reference_replica，与旧replica/suite互斥；新免费build_reference_replica_prompts保存并导出，export_validated_reference_replica只读重现。复用原DesignService确认/提交/进度和review_reference_replica。旧工具继续处理原replica，不原地改变旧方案编译结果或模型参数。新增字段为空时从摘要规范化内容排除，确保原008摘要仍可验证。
+
+从suite.py抽出不改变原输出的字段校验、绘图内容构造、统一规范渲染及摘要校验辅助函数，新编译器复用并输出原Markdown结构。目标风格仅取共享规范，参考图不充当商品身份；已验证DrawingPrompt与ReplicaDrawingPrompt提供中间结构，最终ImageTask验证长度/图像哈希/执行参数。逐类型canvas决定真实模型分档，实际提交和导出共用compile函数。
+
+新增复刻模板和源图拆解两个JSON Resources、启动和跨图复核两个Prompts，指向既有风格/版式资源；不新增搜索、视觉模型、字体下载或数据库依赖。专项覆盖结构错误、角色冲突、SKU串图、摘要/确认、导出实际一致、三模型、分批/原任务复用、复核和旧008兼容，再执行现有11阶段检查。

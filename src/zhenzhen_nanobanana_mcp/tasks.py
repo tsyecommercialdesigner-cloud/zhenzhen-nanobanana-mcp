@@ -8,11 +8,14 @@ import sqlite3
 import time
 import uuid
 from contextlib import contextmanager
+from pathlib import Path
 
 import httpx
 
 from .config import BusinessError, Settings
-from .media import MIB, MediaLoader
+from .media import MIB, MediaLoader, TransientDownloadError
+from .integrity import digest_file, publish
+from .limits import MAX_BATCH_ITEMS
 from .models import (
     ImageTask,
     SavedImage,
@@ -22,10 +25,10 @@ from .models import (
     resolve_api,
     route_model,
 )
-from .provider import Provider
+from .provider import Provider, SafeConnectFailure
 from .service import BatchService
 
-ACTIVE = ("queued", "preparing", "running")
+ACTIVE = ("queued", "preparing", "running", "recovering")
 LEASE_SECONDS = 30
 HEARTBEAT_SECONDS = 5
 LOG = logging.getLogger(__name__)
@@ -49,6 +52,7 @@ class TaskQueue:
         self.wake = asyncio.Event()
         self.started = False
         self.closing = False
+        self.verified_files: dict[str, tuple] = {}
 
     @contextmanager
     def connect(self, readonly=False):
@@ -59,9 +63,9 @@ class TaskQueue:
         db = None
         try:
             db = (
-                sqlite3.connect(path.as_uri() + "?mode=ro", uri=True, timeout=1)
+                sqlite3.connect(path.as_uri() + "?mode=ro", uri=True, timeout=3)
                 if readonly
-                else sqlite3.connect(path, timeout=1)
+                else sqlite3.connect(path, timeout=3)
             )
             db.row_factory = sqlite3.Row
             if not readonly:
@@ -77,6 +81,7 @@ class TaskQueue:
                             raise
                         time.sleep(0.02)
                 db.execute("PRAGMA synchronous=FULL")
+                db.execute("BEGIN IMMEDIATE")
                 db.execute(
                     "CREATE TABLE IF NOT EXISTS task_owners (owner TEXT PRIMARY KEY, heartbeat REAL NOT NULL)"
                 )
@@ -94,6 +99,22 @@ class TaskQueue:
                     db.execute(
                         "ALTER TABLE image_tasks ADD COLUMN base_url TEXT NOT NULL DEFAULT ''"
                     )
+                additions = {
+                    "provider_key": "TEXT NOT NULL DEFAULT ''",
+                    "reference_hashes": "TEXT NOT NULL DEFAULT '[]'",
+                    "input_paths": "TEXT NOT NULL DEFAULT '[]'",
+                    "response_path": "TEXT NOT NULL DEFAULT ''",
+                    "response_sha256": "TEXT NOT NULL DEFAULT ''",
+                    "post_attempts": "INTEGER NOT NULL DEFAULT 0",
+                    "recovery_attempts": "INTEGER NOT NULL DEFAULT 0",
+                    "cycle_attempts": "INTEGER NOT NULL DEFAULT 0",
+                    "safe_retry": "INTEGER NOT NULL DEFAULT 0",
+                    "next_attempt": "REAL NOT NULL DEFAULT 0",
+                    "repair_files": "INTEGER NOT NULL DEFAULT 0",
+                }
+                for column, declaration in additions.items():
+                    if column not in columns:
+                        db.execute(f"ALTER TABLE image_tasks ADD COLUMN {column} {declaration}")
                 db.execute("CREATE INDEX IF NOT EXISTS image_tasks_queue ON image_tasks(state,seq)")
                 db.commit()
             with db:
@@ -109,9 +130,9 @@ class TaskQueue:
     def reap(self, db):
         stale = time.time() - LEASE_SECONDS
         db.execute(
-            """UPDATE image_tasks SET state=CASE WHEN state='preparing' THEN 'queued' ELSE 'unknown' END,
-                   error=CASE WHEN state='preparing' THEN NULL ELSE '工作进程中断，上游结果与费用不确定；未自动重发。' END,
-                   owner=NULL, updated=? WHERE state IN ('preparing','running','unknown') AND owner IN
+            """UPDATE image_tasks SET state=CASE WHEN state='preparing' THEN 'queued' WHEN state='recovering' THEN 'recovering' ELSE 'unknown' END,
+                   error=CASE WHEN state='preparing' THEN NULL WHEN state='recovering' THEN '进程中断，按已保存响应恢复图片，不重发绘图。' ELSE '工作进程中断，上游结果与费用不确定；未自动重发。' END,
+                   owner=NULL, updated=? WHERE state IN ('preparing','running','unknown','recovering') AND owner IN
                    (SELECT owner FROM task_owners WHERE heartbeat < ?)""",
             (time.time(), stale),
         )
@@ -155,7 +176,7 @@ class TaskQueue:
                     reconciled = list(self.reconcile)
                     for seq in reconciled:
                         db.execute(
-                            "UPDATE image_tasks SET state='unknown',owner=NULL,error=?,updated=? WHERE seq=? AND owner=? AND state IN ('preparing','running','unknown')",
+                            "UPDATE image_tasks SET state='unknown',owner=NULL,error=?,updated=? WHERE seq=? AND owner=? AND state IN ('preparing','running','recovering','unknown')",
                             (
                                 "任务账本写入曾失败，结果和费用不确定；未自动重发。",
                                 time.time(),
@@ -186,24 +207,67 @@ class TaskQueue:
         self.started = False
 
     def result(self, row, reused=False):
+        keys = set(row.keys())
+
+        def value(name, default):
+            return row[name] if name in keys else default
+
+        images = [SavedImage.model_validate(i) for i in json.loads(row["images"])]
+        state, error, integrity = row["state"], row["error"], "not_checked"
+        if state == "succeeded":
+            try:
+                if not images:
+                    raise BusinessError("任务没有已保存图片。")
+                for image in images:
+                    path = self.storage.safe_output(Path(image.path))
+                    stat = path.stat()
+                    stamp = (
+                        stat.st_size,
+                        stat.st_mtime_ns,
+                        stat.st_ctime_ns,
+                        stat.st_ino,
+                        image.sha256,
+                    )
+                    if self.verified_files.get(str(path)) != stamp:
+                        if (
+                            stat.st_size != image.bytes
+                            or digest_file(path, 32 * MIB) != image.sha256
+                        ):
+                            raise BusinessError("图片大小或SHA256不匹配。")
+                        self.verified_files[str(path)] = stamp
+                integrity = "verified"
+            except (OSError, BusinessError):
+                state, integrity = "failed", "failed"
+                error = "已生成结果文件缺失或SHA256不匹配；未重新出图，可用原响应修复。"
         return TaskResult(
+            provider_idempotency_key=value("provider_key", "")
+            or self.key_for(
+                row["checkpointer"], row["thread_id"], row["task_id"], row["fingerprint"]
+            ),
+            reference_sha256=json.loads(value("reference_hashes", "[]")),
+            post_attempts=value("post_attempts", 0),
+            recovery_attempts=value("recovery_attempts", 0),
+            safe_to_retry=bool(value("safe_retry", 0) or value("response_path", "")),
+            file_integrity=integrity,
             checkpointer=row["checkpointer"],
             thread_id=row["thread_id"],
             task_id=row["task_id"],
-            status=row["state"],
+            status=state,
             actual_model=row["actual_model"],
             api_format=row["api_format"],
             endpoint=row["endpoint"],
-            images=json.loads(row["images"]),
-            error=row["error"],
+            images=images,
+            error=error,
             created_at=row["created"],
             updated_at=row["updated"],
             reused=reused,
         )
 
     async def submit(self, checkpointer: str, thread_id: str, tasks: list[ImageTask]) -> TaskPage:
-        if not 1 <= len(tasks) <= 12 or len({task.task_id for task in tasks}) != len(tasks):
-            raise BusinessError("每次提交1–12项，task_id不可重复。")
+        if not 1 <= len(tasks) <= MAX_BATCH_ITEMS or len({task.task_id for task in tasks}) != len(
+            tasks
+        ):
+            raise BusinessError("每次提交1–20项，task_id不可重复。")
         prepared = []
         for task in tasks:
             actual_model = route_model(task.model, task.resolution)
@@ -218,7 +282,9 @@ class TaskQueue:
             ).model_dump_json()
             canonical = json.dumps(
                 {
-                    "request": task.model_dump(),
+                    "request": task.model_dump(
+                        exclude={"reference_sha256"} if task.reference_sha256 is None else set()
+                    ),
                     "model": actual_model,
                     "api": api,
                     "endpoint": endpoint,
@@ -254,7 +320,7 @@ class TaskQueue:
                         )
                     reused.add(task_id)
             pending = db.execute(
-                "SELECT count(*) FROM image_tasks WHERE state IN ('queued','preparing','running')"
+                "SELECT count(*) FROM image_tasks WHERE state IN ('queued','preparing','running','recovering')"
             ).fetchone()[0]
             if pending + len(prepared) - len(reused) > self.settings.max_pending_tasks:
                 raise BusinessError("任务队列容量已满；本次未新增任务，稍后用相同标识提交。")
@@ -263,7 +329,7 @@ class TaskQueue:
                 if task_id not in reused:
                     db.execute(
                         """INSERT INTO image_tasks(checkpointer,thread_id,task_id,fingerprint,request,
-                               actual_model,api_format,endpoint,base_url,state,created,updated) VALUES (?,?,?,?,?,?,?,?,?,'queued',?,?)""",
+                               actual_model,api_format,endpoint,base_url,state,created,updated,provider_key) VALUES (?,?,?,?,?,?,?,?,?,'queued',?,?,?)""",
                         (
                             checkpointer,
                             thread_id,
@@ -276,6 +342,7 @@ class TaskQueue:
                             self.settings.base_url,
                             now,
                             now,
+                            self.key_for(checkpointer, thread_id, task_id, fingerprint),
                         ),
                     )
                 rows.append(
@@ -364,10 +431,12 @@ class TaskQueue:
                     error = (
                         "本地取消；上游可能已收费，未自动重发。"
                         if state == "unknown"
+                        else "已停止原响应的图片恢复，绘图可能已收费。"
+                        if row["state"] == "recovering"
                         else "已取消，未发起绘图请求。"
                     )
                     db.execute(
-                        "UPDATE image_tasks SET state=?,error=?,updated=?,owner=CASE WHEN state='running' THEN owner ELSE NULL END WHERE seq=?",
+                        "UPDATE image_tasks SET state=?,error=?,updated=?,owner=CASE WHEN state IN ('running','recovering') THEN owner ELSE NULL END WHERE seq=?",
                         (state, error, time.time(), row["seq"]),
                     )
                     if row["seq"] in self.inflight:
@@ -385,117 +454,295 @@ class TaskQueue:
             if owner is None:
                 return None
             active = db.execute(
-                "SELECT count(*) FROM image_tasks WHERE state IN ('preparing','running') OR (state='unknown' AND owner IS NOT NULL)"
+                "SELECT count(*) FROM image_tasks WHERE state IN ('preparing','running') OR (state IN ('unknown','recovering') AND owner IS NOT NULL)"
             ).fetchone()[0]
             if active >= self.settings.concurrency:
                 return None
             row = db.execute(
-                "SELECT * FROM image_tasks WHERE state='queued' ORDER BY seq LIMIT 1"
+                "SELECT * FROM image_tasks WHERE (state='queued' OR (state='recovering' AND owner IS NULL)) AND next_attempt<=? ORDER BY seq LIMIT 1",
+                (time.time(),),
             ).fetchone()
             if row is not None:
                 db.execute(
-                    "UPDATE image_tasks SET state='preparing',owner=?,updated=? WHERE seq=?",
+                    "UPDATE image_tasks SET state=CASE WHEN state='recovering' THEN 'recovering' ELSE 'preparing' END,owner=?,updated=? WHERE seq=?",
                     (self.owner, time.time(), row["seq"]),
                 )
             return row
 
-    def finish(self, seq, state, images=None, error=None):
+    def finish(self, seq, state, images=None, error=None, safe_retry=False):
         with self.connect() as db:
             db.execute(
-                "UPDATE image_tasks SET state=?,images=?,error=?,updated=? WHERE seq=? AND owner=? AND state IN ('preparing','running')",
+                "UPDATE image_tasks SET state=?,images=?,error=?,safe_retry=?,updated=? WHERE seq=? AND owner=? AND state IN ('preparing','running','recovering')",
                 (
                     state,
                     json.dumps(images or [], ensure_ascii=False),
                     error,
+                    int(safe_retry),
                     time.time(),
                     seq,
                     self.owner,
                 ),
             )
 
+    @staticmethod
+    def key_for(checkpointer, thread_id, task_id, fingerprint):
+        return hashlib.sha256(
+            json.dumps([checkpointer, thread_id, task_id, fingerprint], ensure_ascii=False).encode()
+        ).hexdigest()
+
+    def checkpoint(self, row, sources):
+        data = json.dumps(sources, ensure_ascii=False).encode()
+        digest = hashlib.sha256(data).hexdigest()
+        path = self.storage.safe_output(self.storage.root / "task-responses" / f"{digest}.json")
+        publish(path, data)
+        with self.connect() as db:
+            changed = db.execute(
+                "UPDATE image_tasks SET response_path=?,response_sha256=?,state='recovering',recovery_attempts=recovery_attempts+1,cycle_attempts=1,safe_retry=1,updated=? WHERE seq=? AND owner=? AND state='running' AND EXISTS(SELECT 1 FROM task_owners WHERE owner=? AND heartbeat>=?)",
+                (
+                    str(path),
+                    digest,
+                    time.time(),
+                    row["seq"],
+                    self.owner,
+                    self.owner,
+                    time.time() - LEASE_SECONDS,
+                ),
+            ).rowcount
+        if not changed:
+            raise BusinessError("任务已取消或租约失效；未继续处理结果。")
+
+    def resume_sources(self, row):
+        path = self.storage.safe_output(Path(row["response_path"]))
+        if digest_file(path, 110 * MIB) != row["response_sha256"]:
+            raise BusinessError("响应检查点SHA256不匹配，不能恢复或重发绘图。")
+        return json.loads(path.read_text(encoding="utf-8"))
+
+    async def prepare_inputs(self, row, task):
+        frozen = json.loads(row["input_paths"])
+        references = [await self.storage.loader.load(p) for p in (frozen or task.reference_images)]
+        hashes = [ref.digest for ref in references]
+        expected = json.loads(row["reference_hashes"]) if frozen else task.reference_sha256
+        if expected is not None and hashes != expected:
+            raise BusinessError("参考图SHA256不匹配；未发起绘图请求。")
+        if sum(len(ref.data) for ref in references) > 40 * MIB:
+            raise BusinessError("单项参考图总字节数超过40 MiB；未发起绘图请求。")
+        paths = []
+        for ref in references:
+            path = self.storage.safe_output(
+                self.storage.root / "task-inputs" / (ref.digest + ref.suffix)
+            )
+            publish(path, ref.data)
+            paths.append(str(path))
+        with self.connect() as db:
+            db.execute(
+                "UPDATE image_tasks SET reference_hashes=?,input_paths=? WHERE seq=? AND owner=? AND state='preparing'",
+                (json.dumps(hashes), json.dumps(paths), row["seq"], self.owner),
+            )
+        return references
+
+    def schedule_recovery(self, seq, images):
+        with self.connect() as db:
+            row = db.execute(
+                "SELECT cycle_attempts FROM image_tasks WHERE seq=? AND owner=? AND state='recovering'",
+                (seq, self.owner),
+            ).fetchone()
+            if row:
+                attempts = row[0]
+                state = "recovering" if attempts < self.settings.safe_attempts else "failed"
+                db.execute(
+                    "UPDATE image_tasks SET state=?,owner=NULL,images=?,safe_retry=1,next_attempt=?,error=?,updated=? WHERE seq=? AND owner=?",
+                    (
+                        state,
+                        json.dumps(images),
+                        time.time() + self.settings.retry_delay * 2 ** (attempts - 1),
+                        "原响应的下载/落盘未完成；仅恢复原响应，不重新绘图。",
+                        time.time(),
+                        seq,
+                        self.owner,
+                    ),
+                )
+
     async def execute(self, row):
-        seq = row["seq"]
-        dispatched = False
-        images = []
+        seq, dispatched = row["seq"], False
+        checkpointed = bool(row["response_path"])
+        images = json.loads(row["images"])
         try:
-            if row["base_url"] != self.settings.base_url:
+            if not checkpointed and row["base_url"] != self.settings.base_url:
                 raise BusinessError(
                     "任务登记的服务地址与当前配置不同；未发起请求，请人工核对配置。"
                 )
             task = ImageTask.model_validate_json(row["request"])
             async with asyncio.timeout(self.settings.timeout):
-                references = [
-                    await self.storage.loader.load(value) for value in task.reference_images
-                ]
-                if sum(len(ref.data) for ref in references) > 40 * MIB:
-                    raise BusinessError("单项参考图总字节数超过40 MiB；未发起绘图请求。")
-                if not self.settings.api_key:
-                    raise BusinessError("未配置API密钥；未发起绘图请求。")
-                with self.connect() as db:
-                    changed = db.execute(
-                        """UPDATE image_tasks SET state='running',updated=? WHERE seq=? AND owner=?
-                        AND state='preparing' AND EXISTS(SELECT 1 FROM task_owners WHERE owner=? AND heartbeat>=?)""",
-                        (time.time(), seq, self.owner, self.owner, time.time() - LEASE_SECONDS),
-                    ).rowcount
-                if not changed:
-                    return
-                dispatched = True
-                media = await self.storage.provider.render(
-                    task, references, row["actual_model"], row["api_format"]
-                )
-                with self.connect(readonly=True) as db:
-                    still_owned = db.execute(
-                        "SELECT 1 FROM image_tasks WHERE seq=? AND owner=? AND state='running'",
-                        (seq, self.owner),
-                    ).fetchone()
-                if not still_owned:
-                    return
-                folder = self.storage.safe_output(self.storage.root / uuid.uuid4().hex)
-                folder.mkdir(exist_ok=False)
-                for index, item in enumerate(media):
-                    path = self.storage.safe_output(folder / f"{index + 1:02}{item.suffix}")
-                    with path.open("xb") as stream:
-                        stream.write(item.data)
-                    images.append(
-                        SavedImage(
-                            path=str(path),
-                            mime_type=item.mime,
-                            width=item.width,
-                            height=item.height,
-                            bytes=len(item.data),
-                            sha256=item.digest,
-                        ).model_dump()
+                if checkpointed:
+                    sources = self.resume_sources(row)
+                    with self.connect() as db:
+                        db.execute(
+                            "UPDATE image_tasks SET recovery_attempts=recovery_attempts+1,cycle_attempts=cycle_attempts+1 WHERE seq=? AND owner=? AND state='recovering'",
+                            (seq, self.owner),
+                        )
+                    media = await self.storage.provider.collect(sources)
+                else:
+                    references = await self.prepare_inputs(row, task)
+                    if not self.settings.api_key:
+                        raise BusinessError("未配置API密钥；未发起绘图请求。")
+                    with self.connect() as db:
+                        changed = db.execute(
+                            "UPDATE image_tasks SET state='running',post_attempts=post_attempts+1,safe_retry=0,updated=? WHERE seq=? AND owner=? AND state='preparing' AND EXISTS(SELECT 1 FROM task_owners WHERE owner=? AND heartbeat>=?)",
+                            (time.time(), seq, self.owner, self.owner, time.time() - LEASE_SECONDS),
+                        ).rowcount
+                    if not changed:
+                        return
+                    first_attempt = True
+
+                    def on_attempt():
+                        nonlocal first_attempt
+                        with self.connect() as db:
+                            changed = db.execute(
+                                "UPDATE image_tasks SET post_attempts=post_attempts+? WHERE seq=? AND owner=? AND state='running' AND EXISTS(SELECT 1 FROM task_owners WHERE owner=? AND heartbeat>=?)",
+                                (
+                                    0 if first_attempt else 1,
+                                    seq,
+                                    self.owner,
+                                    self.owner,
+                                    time.time() - LEASE_SECONDS,
+                                ),
+                            ).rowcount
+                        first_attempt = False
+                        if not changed:
+                            raise BusinessError("任务已取消或租约失效；未发送新的绘图请求。")
+
+                    def on_response(sources):
+                        nonlocal checkpointed
+                        self.checkpoint(row, sources)
+                        checkpointed = True
+
+                    task._provider_key = row["provider_key"] or self.key_for(
+                        row["checkpointer"], row["thread_id"], row["task_id"], row["fingerprint"]
                     )
+                    task._on_post_attempt, task._on_response = on_attempt, on_response
+                    dispatched = True
+                    media = await self.storage.provider.render(
+                        task, references, row["actual_model"], row["api_format"]
+                    )
+                    if not checkpointed:
+                        on_response([m.data_url for m in media])
+                with self.connect(readonly=True) as db:
+                    if not db.execute(
+                        "SELECT 1 FROM image_tasks WHERE seq=? AND owner=? AND state='recovering'",
+                        (seq, self.owner),
+                    ).fetchone():
+                        return
+                key = row["provider_key"] or self.key_for(
+                    row["checkpointer"], row["thread_id"], row["task_id"], row["fingerprint"]
+                )
+                folder = self.storage.safe_output(
+                    self.storage.root / uuid.uuid5(uuid.NAMESPACE_URL, key).hex
+                )
+                if not media or len(media) > 4 or len(media) < len(images):
+                    raise BusinessError("原响应的图片数量无效或发生变化，不能替换已有结果。")
+                for index, item in enumerate(media):
+                    if index < len(images) and images[index]["sha256"] != item.digest:
+                        raise BusinessError("原响应图片内容已改变，不能替换已有结果。")
+                    path = self.storage.safe_output(folder / f"{index + 1:02}{item.suffix}")
+                    publish(path, item.data, repair=bool(row["repair_files"]))
+                    saved = SavedImage(
+                        path=str(path),
+                        mime_type=item.mime,
+                        width=item.width,
+                        height=item.height,
+                        bytes=len(item.data),
+                        sha256=item.digest,
+                    ).model_dump()
+                    if index < len(images):
+                        images[index] = saved
+                    else:
+                        images.append(saved)
                 self.finish(seq, "succeeded", images)
         except asyncio.CancelledError:
             self.finish(
                 seq,
-                "unknown" if dispatched else "queued",
+                "recovering" if checkpointed else "unknown" if dispatched else "queued",
                 images,
-                "等待中断，上游结果和费用不确定；未自动重发。" if dispatched else None,
+                "本地等待中断；保留原响应/幂等键，不重发可能已收费请求。",
+                safe_retry=checkpointed or not dispatched,
             )
             raise
-        except (httpx.HTTPError, TimeoutError):
+        except SafeConnectFailure as exc:
+            self.finish(seq, "failed", images, str(exc), safe_retry=True)
+        except (httpx.HTTPError, TimeoutError, OSError, TransientDownloadError):
+            if checkpointed:
+                self.schedule_recovery(seq, images)
+            else:
+                self.finish(
+                    seq,
+                    "unknown" if dispatched else "failed",
+                    images,
+                    "请求超时/网络或文件失败；可能已发送的绘图未自动重发。",
+                    safe_retry=not dispatched,
+                )
+        except BusinessError as exc:
+            self.finish(seq, "failed", images, str(exc), safe_retry=checkpointed or not dispatched)
+        except Exception:
             self.finish(
                 seq,
-                "unknown" if dispatched else "failed",
+                "failed",
                 images,
-                "请求或下载超时/网络失败；上游可能已收费，未自动重发。"
-                if dispatched
-                else "参考图准备超时/网络失败，未发起绘图请求。",
+                "任务处理失败；请查询原标识，不自动重发。",
+                safe_retry=checkpointed or not dispatched,
             )
-        except BusinessError as exc:
-            self.finish(seq, "failed", images, str(exc))
-        except Exception:
-            self.finish(seq, "failed", images, "任务处理或保存失败；请查询原标识，不自动重发。")
         finally:
-            # Another Host may cancel a running call. Keep its slot until the original
-            # local waiter really exits (or its owner lease expires).
             with self.connect() as db:
                 db.execute(
-                    "UPDATE image_tasks SET owner=NULL WHERE seq=? AND owner=? AND state NOT IN ('preparing','running')",
+                    "UPDATE image_tasks SET owner=NULL WHERE seq=? AND owner=? AND state NOT IN ('preparing','running','recovering')",
                     (seq, self.owner),
                 )
+
+    async def retry(self, checkpointer, thread_id, task_ids, repair_files=False):
+        if not task_ids or len(task_ids) > MAX_BATCH_ITEMS or len(set(task_ids)) != len(task_ids):
+            raise BusinessError("重试需1–20个不重复的原task_id。")
+        self.get(checkpointer, thread_id, task_ids)
+        with self.connect() as db:
+            db.execute("BEGIN IMMEDIATE")
+            rows = [
+                db.execute(
+                    "SELECT * FROM image_tasks WHERE checkpointer=? AND thread_id=? AND task_id=?",
+                    (checkpointer, thread_id, key),
+                ).fetchone()
+                for key in task_ids
+            ]
+            changes = []
+            for row in rows:
+                result = self.result(row)
+                if row["state"] in ACTIVE or result.status == "succeeded":
+                    continue
+                if row["owner"] or not (row["response_path"] or row["safe_retry"]):
+                    raise BusinessError(
+                        "包含可能已收费且无可靠响应的任务，禁止重发；请按原标识核对。"
+                    )
+                if result.file_integrity == "failed" and not repair_files:
+                    raise BusinessError(
+                        "结果文件校验失败；修复需显式repair_files=True，原损坏文件会保留。"
+                    )
+                changes.append(row)
+            pending = db.execute(
+                "SELECT count(*) FROM image_tasks WHERE state IN ('queued','preparing','running','recovering')"
+            ).fetchone()[0]
+            if pending + len(changes) > self.settings.max_pending_tasks:
+                raise BusinessError("重试会超出队列容量；本批未重排。")
+            for row in changes:
+                db.execute(
+                    "UPDATE image_tasks SET state=?,owner=NULL,cycle_attempts=0,next_attempt=0,repair_files=?,error=NULL,updated=? WHERE seq=?",
+                    (
+                        "recovering" if row["response_path"] else "queued",
+                        int(repair_files),
+                        time.time(),
+                        row["seq"],
+                    ),
+                )
+        await self.start()
+        self.ensure_workers()
+        self.wake.set()
+        return self.get(checkpointer, thread_id, task_ids)
 
     async def worker(self):
         while not self.closing:

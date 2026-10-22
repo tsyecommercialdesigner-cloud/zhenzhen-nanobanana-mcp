@@ -1,8 +1,10 @@
 """Public contracts shared by the planning and paid tools."""
 
-from typing import Annotated, Literal, cast
+from typing import Annotated, Callable, Literal, cast
 
-from pydantic import BaseModel, ConfigDict, Field, StringConstraints
+from pydantic import BaseModel, ConfigDict, Field, PrivateAttr, StringConstraints, model_validator
+
+from .limits import MAX_BATCH_ITEMS
 
 ModelName = Literal[
     "gemini-3.1-flash-lite-image",
@@ -101,7 +103,7 @@ class ImageSpec(Contract):
     )
 
 
-ImageSpecs = Annotated[list[ImageSpec], Field(min_length=1, max_length=12)]
+ImageSpecs = Annotated[list[ImageSpec], Field(min_length=1, max_length=MAX_BATCH_ITEMS)]
 
 
 class ImagePlan(Contract):
@@ -144,6 +146,7 @@ class BatchResult(Contract):
 
 
 class ModelCatalog(Contract):
+    base_models: list[str] = Field(default_factory=lambda: list(FORMAT_SUPPORT))
     models: list[str]
     api_formats: list[str]
     default_model: str
@@ -177,18 +180,44 @@ ScopeId = Annotated[
 
 
 class ImageTask(ImageSpec):
+    reference_sha256: list[Annotated[str, StringConstraints(pattern=r"^[0-9a-f]{64}$")]] | None = (
+        Field(
+            default=None,
+            max_length=4,
+            description="可选，按参考图顺序提供预期SHA256，内容不符时收费前拒绝。",
+        )
+    )
+    _provider_key: str = PrivateAttr(default="")
+    _on_post_attempt: Callable[[], None] | None = PrivateAttr(default=None)
+    _on_response: Callable[[list[str]], None] | None = PrivateAttr(default=None)
     task_id: ScopeId
     model: ModelName = "gemini-nano-banana-2.1"
     api_format: ApiChoice = "auto"
     endpoint: Endpoint = "auto"
 
+    @model_validator(mode="after")
+    def matching_reference_hashes(self):
+        if self.reference_sha256 is not None and len(self.reference_sha256) != len(
+            self.reference_images
+        ):
+            raise ValueError("reference_sha256必须与reference_images一一对应。")
+        return self
 
-ImageTasks = Annotated[list[ImageTask], Field(min_length=1, max_length=12)]
+
+ImageTasks = Annotated[list[ImageTask], Field(min_length=1, max_length=MAX_BATCH_ITEMS)]
 TaskIds = Annotated[list[ScopeId], Field(min_length=1, max_length=100)]
-TaskState = Literal["queued", "preparing", "running", "succeeded", "failed", "unknown", "cancelled"]
+TaskState = Literal[
+    "queued", "preparing", "running", "recovering", "succeeded", "failed", "unknown", "cancelled"
+]
 
 
 class TaskResult(Contract):
+    provider_idempotency_key: str = ""
+    reference_sha256: list[str] = Field(default_factory=list)
+    post_attempts: int = 0
+    recovery_attempts: int = 0
+    safe_to_retry: bool = False
+    file_integrity: Literal["not_checked", "verified", "failed"] = "not_checked"
     checkpointer: str
     thread_id: str
     task_id: str
