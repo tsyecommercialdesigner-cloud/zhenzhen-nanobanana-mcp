@@ -69,3 +69,22 @@ POST计数是服务器在派发点持久化的尝试计数，本次说明重放�
 原始请求/查询、账本快照、队列采样、图片与来源检查点（可能含临时签名URL）仅保存在本机私有证据目录，未提交图片、SQLite、配置正文、提示词原件、签名URL或密钥。源码/依赖/版本/Host模板/发布流水线在本次归档中不变；现用D盘安装仍固定v0.3.0发布提交，本轮归档不升级安装。
 
 本记录不补齐全模型/变体、同步出图、长期负载、真实故障恢复、平台审核、供应商账单或GUI等未验证项。发布与升级历史分别见[正式发布验收](RELEASE-0.3.0-ACCEPTANCE.md)和[D盘升级验收](LOCAL-V0.3.0-UPGRADE-ACCEPTANCE.md)。本轮文档检查与dev→PR→Windows CI→审查合并的最终结果以对应PR及精确合入提交CI记录为准，不预填未来通过。
+
+## 5. 验收归档完成后的 dev 快进同步
+
+本节记录2026-10-22已完成的归档及分支同步快照，区分此前真实绘图、本节无收费同步和后续文档归档；后续新增文档提交会产生新HEAD，不要求分支永远固定在本节SHA。
+
+此前验收文档提交 `d6bbf6146bdaa89a2247176d419470ae20f96383` 经[PR #24](https://github.com/tsyecommercialdesigner-cloud/zhenzhen-nanobanana-mcp/pull/24)审查与必需Windows quality通过，正常合入main的 `861277c0f4517ad8f6869cf8b0ea2b85d5fe5720`，再核对该合入提交CI成功；没有管理员绕过或Release操作。随后按用户授权执行本地 `git merge --ff-only origin/main` 与普通 `git push origin dev`，从d6bbf61快进到861277c，没有新建提交、改文件、强推或删除分支。
+
+| 阶段 | 分支 / 事件 | 精确提交 | Windows CI |
+| --- | --- | --- | --- |
+| 验收文档推送 | dev / push | `d6bbf6146bdaa89a2247176d419470ae20f96383` | [39722278653](https://github.com/tsyecommercialdesigner-cloud/zhenzhen-nanobanana-mcp/actions/runs/39722278653) 成功 |
+| 验收文档PR | dev / pull_request | `d6bbf6146bdaa89a2247176d419470ae20f96383` | [39722308337](https://github.com/tsyecommercialdesigner-cloud/zhenzhen-nanobanana-mcp/actions/runs/39722308337) 成功 |
+| 合入提交复验 | main / push | `861277c0f4517ad8f6869cf8b0ea2b85d5fe5720` | [39722870001](https://github.com/tsyecommercialdesigner-cloud/zhenzhen-nanobanana-mcp/actions/runs/39722870001) 成功 |
+| dev快进同步 | dev / push | `861277c0f4517ad8f6869cf8b0ea2b85d5fe5720` | [39723976626](https://github.com/tsyecommercialdesigner-cloud/zhenzhen-nanobanana-mcp/actions/runs/39723976626) 成功 |
+
+四轮CI的报告均核对为165项测试、11个阶段全部通过。同步轮明确核对事件为push、分支为dev、HEAD为861277c；使用该轮自己的报告，不复用main检查替代同步验证。同步结束时本地dev、origin/dev、origin/main及远端实际main/dev均为861277c，领先/落后0/0，工作区干净。
+
+同步前后只读快照核对20条现用任务完整记录、128个受保护文件（包括原始验收材料、输出、凭据文件和已核对Host配置）均不变；D盘安装仍固定正式v0.3.0的 `c6121a7f142558aa53bc622505b4f1d1e17fcca2`，不随开发分支移动。4个既有Release的发布记录/附件摘要不变，没有新增Release工作流或收费绘图调用。原始图片、账本、备份和私有证据继续保留，完整快照、CI报告及本机报告解析说明只留本机忽略目录，不入库。
+
+本节所述同步已完成；本节文档的后续dev→PR→Windows CI→审查合并及合入CI结果，以承载本节的实际PR和精确提交运行记录为准，不预填未来成功。
