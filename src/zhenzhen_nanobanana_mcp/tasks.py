@@ -53,6 +53,8 @@ class TaskQueue:
         self.started = False
         self.closing = False
         self.verified_files: dict[str, tuple] = {}
+        self.schema_identity: tuple[int, int] | None = None
+        self.wal_keeper: sqlite3.Connection | None = None
 
     @contextmanager
     def connect(self, readonly=False):
@@ -69,54 +71,59 @@ class TaskQueue:
             )
             db.row_factory = sqlite3.Row
             if not readonly:
-                # Concurrent first connections can race while switching an empty DB to WAL.
-                # Only retry this local setup, never a task body or a provider POST.
-                for attempt in range(8):
-                    try:
-                        if db.execute("PRAGMA journal_mode").fetchone()[0] != "wal":
-                            db.execute("PRAGMA journal_mode=WAL")
-                        break
-                    except sqlite3.OperationalError as exc:
-                        if "locked" not in str(exc).lower() or attempt == 7:
-                            raise
-                        time.sleep(0.02)
                 db.execute("PRAGMA synchronous=FULL")
-                db.execute("BEGIN IMMEDIATE")
-                db.execute(
-                    "CREATE TABLE IF NOT EXISTS task_owners (owner TEXT PRIMARY KEY, heartbeat REAL NOT NULL)"
-                )
-                db.execute("""CREATE TABLE IF NOT EXISTS image_tasks (
-                    seq INTEGER PRIMARY KEY AUTOINCREMENT,
-                    checkpointer TEXT NOT NULL, thread_id TEXT NOT NULL, task_id TEXT NOT NULL,
-                    fingerprint TEXT NOT NULL, request TEXT NOT NULL, actual_model TEXT NOT NULL,
-                    api_format TEXT NOT NULL, endpoint TEXT NOT NULL, state TEXT NOT NULL,
-                    base_url TEXT NOT NULL,
-                    owner TEXT, images TEXT NOT NULL DEFAULT '[]', error TEXT,
-                    created REAL NOT NULL, updated REAL NOT NULL,
-                    UNIQUE(checkpointer, thread_id, task_id))""")
-                columns = {column[1] for column in db.execute("PRAGMA table_info(image_tasks)")}
-                if "base_url" not in columns:
+                identity = (path.stat().st_dev, path.stat().st_ino)
+                if self.schema_identity != identity:
+                    # Concurrent first connections can race while switching an empty DB to WAL.
+                    # Only retry this local setup, never a task body or a provider POST.
+                    for attempt in range(8):
+                        try:
+                            if db.execute("PRAGMA journal_mode").fetchone()[0] != "wal":
+                                db.execute("PRAGMA journal_mode=WAL")
+                            break
+                        except sqlite3.OperationalError as exc:
+                            if "locked" not in str(exc).lower() or attempt == 7:
+                                raise
+                            time.sleep(0.02)
+                    db.execute("BEGIN IMMEDIATE")
                     db.execute(
-                        "ALTER TABLE image_tasks ADD COLUMN base_url TEXT NOT NULL DEFAULT ''"
+                        "CREATE TABLE IF NOT EXISTS task_owners (owner TEXT PRIMARY KEY, heartbeat REAL NOT NULL)"
                     )
-                additions = {
-                    "provider_key": "TEXT NOT NULL DEFAULT ''",
-                    "reference_hashes": "TEXT NOT NULL DEFAULT '[]'",
-                    "input_paths": "TEXT NOT NULL DEFAULT '[]'",
-                    "response_path": "TEXT NOT NULL DEFAULT ''",
-                    "response_sha256": "TEXT NOT NULL DEFAULT ''",
-                    "post_attempts": "INTEGER NOT NULL DEFAULT 0",
-                    "recovery_attempts": "INTEGER NOT NULL DEFAULT 0",
-                    "cycle_attempts": "INTEGER NOT NULL DEFAULT 0",
-                    "safe_retry": "INTEGER NOT NULL DEFAULT 0",
-                    "next_attempt": "REAL NOT NULL DEFAULT 0",
-                    "repair_files": "INTEGER NOT NULL DEFAULT 0",
-                }
-                for column, declaration in additions.items():
-                    if column not in columns:
-                        db.execute(f"ALTER TABLE image_tasks ADD COLUMN {column} {declaration}")
-                db.execute("CREATE INDEX IF NOT EXISTS image_tasks_queue ON image_tasks(state,seq)")
-                db.commit()
+                    db.execute("""CREATE TABLE IF NOT EXISTS image_tasks (
+                        seq INTEGER PRIMARY KEY AUTOINCREMENT,
+                        checkpointer TEXT NOT NULL, thread_id TEXT NOT NULL, task_id TEXT NOT NULL,
+                        fingerprint TEXT NOT NULL, request TEXT NOT NULL, actual_model TEXT NOT NULL,
+                        api_format TEXT NOT NULL, endpoint TEXT NOT NULL, state TEXT NOT NULL,
+                        base_url TEXT NOT NULL,
+                        owner TEXT, images TEXT NOT NULL DEFAULT '[]', error TEXT,
+                        created REAL NOT NULL, updated REAL NOT NULL,
+                        UNIQUE(checkpointer, thread_id, task_id))""")
+                    columns = {column[1] for column in db.execute("PRAGMA table_info(image_tasks)")}
+                    if "base_url" not in columns:
+                        db.execute(
+                            "ALTER TABLE image_tasks ADD COLUMN base_url TEXT NOT NULL DEFAULT ''"
+                        )
+                    additions = {
+                        "provider_key": "TEXT NOT NULL DEFAULT ''",
+                        "reference_hashes": "TEXT NOT NULL DEFAULT '[]'",
+                        "input_paths": "TEXT NOT NULL DEFAULT '[]'",
+                        "response_path": "TEXT NOT NULL DEFAULT ''",
+                        "response_sha256": "TEXT NOT NULL DEFAULT ''",
+                        "post_attempts": "INTEGER NOT NULL DEFAULT 0",
+                        "recovery_attempts": "INTEGER NOT NULL DEFAULT 0",
+                        "cycle_attempts": "INTEGER NOT NULL DEFAULT 0",
+                        "safe_retry": "INTEGER NOT NULL DEFAULT 0",
+                        "next_attempt": "REAL NOT NULL DEFAULT 0",
+                        "repair_files": "INTEGER NOT NULL DEFAULT 0",
+                    }
+                    for column, declaration in additions.items():
+                        if column not in columns:
+                            db.execute(f"ALTER TABLE image_tasks ADD COLUMN {column} {declaration}")
+                    db.execute(
+                        "CREATE INDEX IF NOT EXISTS image_tasks_queue ON image_tasks(state,seq)"
+                    )
+                    db.commit()
+                    self.schema_identity = identity
             with db:
                 yield db
         except sqlite3.Error:
@@ -152,6 +159,21 @@ class TaskQueue:
             db.execute("BEGIN IMMEDIATE")
             self.reap(db)
             db.execute("INSERT OR REPLACE INTO task_owners VALUES (?,?)", (self.owner, time.time()))
+        # Keep WAL open while workers live; short transactions must not each
+        # become the last connection and checkpoint/delete the WAL on close.
+        if self.wal_keeper is None:
+            path = self.storage.safe_output(self.db_path)
+            keeper = None
+            try:
+                keeper = sqlite3.connect(path.as_uri() + "?mode=ro", uri=True, timeout=3)
+                keeper.execute("SELECT seq FROM image_tasks LIMIT 1").fetchall()
+            except sqlite3.Error:
+                if keeper is not None:
+                    keeper.close()
+                raise BusinessError(
+                    "任务账本连接初始化失败；请查询原标识，不要重新提交。"
+                ) from None
+            self.wal_keeper = keeper
         self.heartbeat = asyncio.create_task(self.keep_alive())
         self.workers = [
             asyncio.create_task(self.worker()) for _ in range(self.settings.concurrency)
@@ -195,16 +217,21 @@ class TaskQueue:
             task.cancel()
         if self.heartbeat:
             self.heartbeat.cancel()
-        await asyncio.gather(
-            *self.workers, *([self.heartbeat] if self.heartbeat else []), return_exceptions=True
-        )
-        if self.db_path.exists() and self.workers:
-            with self.connect() as db:
-                db.execute("UPDATE task_owners SET heartbeat=0 WHERE owner=?", (self.owner,))
-                self.reap(db)
-        self.workers = []
-        self.heartbeat = None
-        self.started = False
+        try:
+            await asyncio.gather(
+                *self.workers, *([self.heartbeat] if self.heartbeat else []), return_exceptions=True
+            )
+            if self.db_path.exists() and self.workers:
+                with self.connect() as db:
+                    db.execute("UPDATE task_owners SET heartbeat=0 WHERE owner=?", (self.owner,))
+                    self.reap(db)
+        finally:
+            if self.wal_keeper is not None:
+                self.wal_keeper.close()
+                self.wal_keeper = None
+            self.workers = []
+            self.heartbeat = None
+            self.started = False
 
     def result(self, row, reused=False):
         keys = set(row.keys())

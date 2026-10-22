@@ -2,6 +2,9 @@ import asyncio
 import io
 import tempfile
 import sys
+import os
+import sqlite3
+import subprocess
 import time
 import unittest
 from concurrent.futures import ThreadPoolExecutor
@@ -350,6 +353,112 @@ class TaskTests(unittest.IsolatedAsyncioTestCase):
         await self.queue.execute(row)
         self.queue.storage.provider.render.assert_not_awaited()
 
+    async def test_schema_setup_is_not_repeated_by_hot_path(self):
+        statements = []
+        real_connect = sqlite3.connect
+
+        def traced(*args, **kwargs):
+            db = real_connect(*args, **kwargs)
+            db.set_trace_callback(statements.append)
+            return db
+
+        with patch("zhenzhen_nanobanana_mcp.tasks.sqlite3.connect", side_effect=traced):
+            with self.queue.connect():
+                pass
+            statements.clear()
+            await self.queue.submit("cp", "thread", [self.task(str(i)) for i in range(10)])
+            done = await self.wait_done(count=10)
+            self.assertTrue(all(t.status == "succeeded" for t in done.tasks))
+            self.assertFalse(any("CREATE " in sql or "table_info" in sql for sql in statements))
+            self.assertTrue(any("synchronous=FULL" in sql for sql in statements))
+        self.assertIsNotNone(self.queue.wal_keeper)
+        await self.queue.close()
+        self.assertIsNone(self.queue.wal_keeper)
+        self.queue.db_path.unlink()  # Windows must release all database handles.
+
+    async def test_schema_cache_invalidates_when_database_is_replaced(self):
+        with self.queue.connect():
+            pass
+        self.queue.db_path.rename(self.root / "old.sqlite3")
+        with self.queue.connect() as db:
+            self.assertEqual(db.execute("SELECT count(*) FROM image_tasks").fetchone()[0], 0)
+
+    async def test_close_releases_keeper_even_when_owner_cleanup_fails(self):
+        await self.queue.submit("cp", "thread", [self.task()])
+        await self.wait_done()
+        with patch.object(self.queue, "connect", side_effect=BusinessError("fixture")):
+            with self.assertRaises(BusinessError):
+                await self.queue.close()
+        self.assertIsNone(self.queue.wal_keeper)
+        self.assertFalse(self.queue.workers)
+        self.queue.db_path.unlink()
+
+    async def close_stdio(self, project, *transports):
+        # The Windows venv launcher can exit before the job's Python child.
+        # Capture actual fixture handles before closing transport; never kill by name.
+        handles = []
+        if os.name == "nt":
+            import _winapi
+
+            for marker in project.glob("process-*.pid"):
+                try:
+                    handles.append(
+                        _winapi.OpenProcess(0x100000 | 0x0001, False, int(marker.read_text()))
+                    )
+                except OSError as exc:
+                    if exc.winerror != 87:  # Already exited.
+                        raise
+        try:
+            for transport in transports:
+                await transport.close()
+        finally:
+            for handle in handles:
+                try:
+                    result = await asyncio.to_thread(_winapi.WaitForSingleObject, handle, 5000)
+                    if result != _winapi.WAIT_OBJECT_0:
+                        _winapi.TerminateProcess(handle, 1)
+                        await asyncio.to_thread(_winapi.WaitForSingleObject, handle, 5000)
+                        self.fail("stdio fixture child outlived transport shutdown")
+                finally:
+                    _winapi.CloseHandle(handle)
+
+    @unittest.skipUnless(os.name == "nt", "Windows file-handle regression")
+    async def test_stdio_cleanup_waits_for_actual_child_database_release(self):
+        project = self.root / "shutdown"
+        project.mkdir()
+        script = """
+import os, sqlite3, sys, time
+from pathlib import Path
+root = Path(sys.argv[1])
+db = sqlite3.connect(root / 'held.sqlite3')
+db.execute('CREATE TABLE fixture(value)')
+(root / f'process-{os.getpid()}.pid').write_text(str(os.getpid()))
+while not (root / 'stop').exists():
+    time.sleep(.01)
+time.sleep(.1)
+db.close()
+"""
+        child = subprocess.Popen([sys.executable, "-c", script, str(project)])
+        try:
+            async with asyncio.timeout(5):
+                while not list(project.glob("process-*.pid")):
+                    await asyncio.sleep(0.01)
+            with self.assertRaises(PermissionError):
+                (project / "held.sqlite3").unlink()
+
+            async def disconnect():
+                (project / "stop").touch()
+
+            transport = Mock(close=AsyncMock(side_effect=disconnect))
+            # Simulate a transport returning before its actual child exits.
+            await self.close_stdio(project, transport)
+            (project / "held.sqlite3").unlink()
+            self.assertEqual(await asyncio.to_thread(child.wait, timeout=5), 0)
+        finally:
+            if child.poll() is None:
+                child.kill()
+            await asyncio.to_thread(child.wait, timeout=5)
+
     async def test_two_stdio_protocols_submit_then_query_without_provider_network(self):
         for mode in ("auto", "legacy"):
             project = self.root / mode
@@ -360,14 +469,13 @@ class TaskTests(unittest.IsolatedAsyncioTestCase):
                 cwd=str(project),
                 keep_alive=False,
             )
-            self.addAsyncCleanup(transport.close)
             peer_transport = StdioTransport(
                 command=sys.executable,
                 args=[str(Path(__file__).with_name("stdio_task_fixture.py")), str(project)],
                 cwd=str(project),
                 keep_alive=False,
             )
-            self.addAsyncCleanup(peer_transport.close)
+            self.addAsyncCleanup(self.close_stdio, project, transport, peer_transport)
             async with (
                 Client(transport, mode=mode, timeout=5) as client,
                 Client(peer_transport, mode=mode, timeout=5) as peer,
