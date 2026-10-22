@@ -166,9 +166,19 @@ class SuiteTests(unittest.IsolatedAsyncioTestCase):
             True,
         )
         final = await self.queue.wait(
-            "ecommerce-design", record.design_id, [t.task_id for t in page.tasks], 10
+            "ecommerce-design",
+            record.design_id,
+            [t.task_id for t in page.tasks],
+            30 if sys.platform == "win32" else 10,
         )
-        self.assertTrue(all(t.status == "succeeded" for t in final.tasks))
+        self.assertFalse(
+            final.wait_timed_out,
+            [(t.task_id, t.status, t.error) for t in final.tasks],
+        )
+        self.assertTrue(
+            all(t.status == "succeeded" for t in final.tasks),
+            [(t.task_id, t.status, t.error) for t in final.tasks],
+        )
         sent = {
             call.args[0].task_id: call.args[0]
             for call in self.queue.storage.provider.render.await_args_list
