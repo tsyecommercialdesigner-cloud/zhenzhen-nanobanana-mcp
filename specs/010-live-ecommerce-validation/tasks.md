@@ -12,4 +12,4 @@
 - [x] 合入提交 Windows CI 39700127651 通过，165项测试与11阶段检查全部成功，保留必需quality门禁；未发布。
 - [x] 独立目录 clone main 精确提交并锁定成员安装，协议发现21工具、9 Resources、6 Prompts；Codex app-server及DSH CLI均发现21工具，7类免费调用通过，没有收费提交。
 - [x] 记录DSH最小profile图片投影限制：原始ImageContent保留并校验正确，Agent内容因缺附件存储/视觉路由降为提示文本，不记为看图验收通过。详细范围见[独立Host验收](../../docs/HOST-VALIDATION-PR19.md)。
-- [ ] 如需验证DSH Agent实际看图，另在具备附件存储与视觉模型路由的隔离profile完成验证；不通过修改验收标准掩盖当前未覆盖项。
+- [x] 按后续授权在独立profile补齐附件存储及Desktop的codeproxy-anthropic / claude-sonnet-5-5路由；真实Agent调用MCP读取随机图形并识别，2次模型请求均HTTP 200，答案与隐藏清单一致，原图/附件/请求图片SHA256一致。见[DSH实际看图验收](../../docs/DSH-VISION-HOST-VALIDATION.md)；保留原最小profile的未通过说明，Desktop GUI仍未覆盖，无新增绘图调用、现用配置改动或发布。

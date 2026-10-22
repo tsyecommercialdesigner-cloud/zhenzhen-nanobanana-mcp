@@ -50,3 +50,7 @@ Codex 调用方式按本机版本生成的 JSON Schema 及 [官方 app-server �
 独立项目仅产生 outputs/designs/designs.sqlite3，没有 outputs/tasks.sqlite3，没有供应商任务和生成图片。Host 子进程已退出；不删除测试证据、私有资料或现用数据。未新增收费调用，未更新 D 盘现用安装，未创建、修改或发布 Release。
 
 证据保存在上述专用父目录：protocol-result.json、Codex 库存/结果/RPC 日志、DSH 结果/profile/日志、verified-summary.json、文件指纹和业务数据数量基线。CI 证据在工作区忽略目录 `.cache/pr19-main-ci-evidence/`。这些本地日志与假配置不入库。
+
+## 后续补充
+
+2026-10-22 在新的独立目录补齐附件存储，并使用 Desktop profile 的 codeproxy-anthropic / claude-sonnet-5-5，完成实际 DSH CLI Agent 看图验证；见[附件与视觉路由验收](DSH-VISION-HOST-VALIDATION.md)。原最小 profile 未验证通过的历史结论保持不变；新增结果不代表 Desktop GUI 已验收。
