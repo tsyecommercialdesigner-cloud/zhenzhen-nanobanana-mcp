@@ -1,8 +1,8 @@
 # zhenzhen-nanobanana-mcp 交付与使用手册
 
-本手册面向 v0.3.0：21 Tools、9 Resources、6 Prompts，包含同步/异步出图、[设计研讨与确认](docs/ECOMMERCE-DESIGN.md)、[共享规范竞品复刻](docs/REFERENCE-REPLICA-UPGRADE.md)、[同款整套提示词](docs/PRODUCT-SUITE.md)及[20项/5并发可靠队列](docs/QUEUE-RELIABILITY.md)。版本须以正式Release和release-eligibility.json核验；草稿阶段停止安装。
+本手册面向 v0.3.1：21 Tools、9 Resources、6 Prompts，包含同步/异步出图、[设计研讨与确认](docs/ECOMMERCE-DESIGN.md)、[共享规范竞品复刻](docs/REFERENCE-REPLICA-UPGRADE.md)、[同款整套提示词](docs/PRODUCT-SUITE.md)及[20项/5并发可靠队列](docs/QUEUE-RELIABILITY.md)。版本须以正式Release和release-eligibility.json核验；草稿阶段停止安装。
 
-现用D盘安装仍为v0.2.2/8工具；本次发布不改动现用Host或安装。原最小DSH profile看图未通过的历史说明保留；独立CLI补齐附件与视觉模型路由后已通过[Agent实际看图](docs/DSH-VISION-HOST-VALIDATION.md)，Desktop GUI与现用完整profile仍未验收。历史[16图验收](specs/010-live-ecommerce-validation/verification.md)为7图Agent通过、9图需修订，不自动重画或等同全部可上架。安装概览见[README](README.md)，发布边界见[v0.3.0说明](docs/RELEASE-0.3.0.md)。
+现用D盘安装仍为v0.3.0/21工具；本次发布不改动现用Host或安装。原最小DSH profile看图未通过的历史说明保留；独立CLI补齐附件与视觉模型路由后已通过[Agent实际看图](docs/DSH-VISION-HOST-VALIDATION.md)，Desktop GUI与现用完整profile仍未验收。历史[16图验收](specs/010-live-ecommerce-validation/verification.md)为7图Agent通过、9图需修订，不自动重画或等同全部可上架。安装概览见[README](README.md)，发布边界见[v0.3.1说明](docs/RELEASE-0.3.1.md)。
 
 ## 1. 环境准备
 
@@ -14,14 +14,14 @@
 |---|---|
 | 项目目录、发行包、服务标识 | `zhenzhen-nanobanana-mcp`（23 字符） |
 | Python 模块 | `zhenzhen_nanobanana_mcp` |
-| 安装目标版本 | [v0.3.0](https://github.com/tsyecommercialdesigner-cloud/zhenzhen-nanobanana-mcp/releases/tag/v0.3.0)，精确SHA与main CI以正式release-eligibility.json为准；草稿不可安装 |
+| 安装目标版本 | [v0.3.1](https://github.com/tsyecommercialdesigner-cloud/zhenzhen-nanobanana-mcp/releases/tag/v0.3.1)，精确SHA与main CI以正式release-eligibility.json为准；草稿不可安装 |
 | 运行环境 | Windows x64，PowerShell 7，Git；Python 精确 `3.12.14`，已验证 uv `0.12.9` |
 | 框架与 SDK | FastMCP `4.1.0`、MCP SDK `2.3.0`，以项目锁文件为准 |
 | 已验收协议 | `2026-07-28` 请求级元数据模式、兼容 `2025-11-25` 初始化握手模式 |
 | Host 配置 | Cherry Studio、Codex、Claude Code；DSH 共用补丁适用于 web、desktop、multica 三种 profile，需逐份合并 |
 | 实测边界 | v0.2.2已通过独立安装、双协议8工具及重启后当前Codex的免费历史查询；更早Codex app-server/DSH CLI隔离profile结果保留历史版本范围，不代表v0.2.2已在DSH复验。DSH三种私人profile完整配置、Multica集成、各GUI和Bash/Zsh执行均未因此视为验证通过 |
 
-历史v0.2.2对应 [Windows CI39571818062](https://github.com/tsyecommercialdesigner-cloud/zhenzhen-nanobanana-mcp/actions/runs/39571818062) 及[发布安装验收](docs/RELEASE-0.2.2-ACCEPTANCE.md)。现用D盘升级和重启后当前Codex会话验收见[本机v0.2.2验收](docs/LOCAL-V0.2.2-UPGRADE-ACCEPTANCE.md)，更早迁移见[历史验收](docs/LOCAL-D-DRIVE-MIGRATION-ACCEPTANCE.md)。本手册按v0.3.0目标维护，不重写旧标签或Release附件；正式发布前不把开发分支作为默认成员安装来源。
+历史v0.2.2对应 [Windows CI39571818062](https://github.com/tsyecommercialdesigner-cloud/zhenzhen-nanobanana-mcp/actions/runs/39571818062) 及[发布安装验收](docs/RELEASE-0.2.2-ACCEPTANCE.md)。现用D盘升级和重启后当前Codex会话验收见[本机v0.2.2验收](docs/LOCAL-V0.2.2-UPGRADE-ACCEPTANCE.md)，更早迁移见[历史验收](docs/LOCAL-D-DRIVE-MIGRATION-ACCEPTANCE.md)。本手册按v0.3.1目标维护，不重写旧标签或Release附件；正式发布前不把开发分支作为默认成员安装来源。
 
 首次安装需访问 GitHub、Python 下载源和 PyPI。公开仓库可 HTTPS clone；私有仓库访问使用成员自己的 Git 凭据管理机制，不在 URL 中写令牌。绘图另需可用的 `https://ai.t8star.org` 账号及模型权限；图片下载访问公开 HTTP/HTTPS 地址。未提供离线依赖包。业务 HTTP 客户端禁用环境代理并校验证书，包管理器的网络设置不能证明业务网络也可用。
 
@@ -49,16 +49,16 @@
 
 ## 2. 项目初始化
 
-以下安装目标为v0.3.0，包含21工具及同步/异步、整套设计与参考复刻能力。仅在正式Release公开后执行。安装器核对正式Release、完整提交和CI，继续拒绝草稿、预发布或资格记录不匹配的版本；仅有标签不等于满足安装资格。
+以下安装目标为v0.3.1，包含21工具及同步/异步、整套设计与参考复刻能力。仅在正式Release公开后执行。安装器核对正式Release、完整提交和CI，继续拒绝草稿、预发布或资格记录不匹配的版本；仅有标签不等于满足安装资格。
 
 ### 首次安装
 
-先核对[正式 Release](https://github.com/tsyecommercialdesigner-cloud/zhenzhen-nanobanana-mcp/releases/tag/v0.3.0)及其 `release-eligibility.json` 的标签、完整提交和 CI。下面在 PowerShell 7 运行：只创建父目录，由 clone 创建同名项目目录；目录已存在时改用第 5 节，不能覆盖。
+先核对[正式 Release](https://github.com/tsyecommercialdesigner-cloud/zhenzhen-nanobanana-mcp/releases/tag/v0.3.1)及其 `release-eligibility.json` 的标签、完整提交和 CI。下面在 PowerShell 7 运行：只创建父目录，由 clone 创建同名项目目录；目录已存在时改用第 5 节，不能覆盖。
 
 ```powershell
 $ErrorActionPreference = 'Stop'
 $ProjectDir = 'D:\MCP\zhenzhen-nanobanana-mcp'
-$ReleaseTag = 'v0.3.0'
+$ReleaseTag = 'v0.3.1'
 if (Test-Path -LiteralPath $ProjectDir) { throw '目录已存在，请使用升级或迁移流程。' }
 New-Item -ItemType Directory -Path (Split-Path -Parent $ProjectDir) -Force | Out-Null
 git clone --branch $ReleaseTag --single-branch 'https://github.com/tsyecommercialdesigner-cloud/zhenzhen-nanobanana-mcp.git' $ProjectDir
@@ -74,7 +74,7 @@ pwsh -NoProfile -File (Join-Path $ProjectDir 'scripts\smoke-test.ps1')
 if ($LASTEXITCODE -ne 0) { throw '隔离协议检查失败。' }
 ```
 
-`-VerifyOnly` 只读取正式 Release、验收附件和对应 main CI，核对 `quality` 成功，不安装、不写凭据；缺少记录、GitHub 限流或网络失败时停止，不回退 main。已有可信开发 checkout 的维护者也可使用其中的 `scripts/install-from-github.ps1 -Tag v0.3.0 -InstallRoot 'D:\MCP'` 完成同等检查和安装，不能在尚未取得源码时执行不存在的相对脚本。
+`-VerifyOnly` 只读取正式 Release、验收附件和对应 main CI，核对 `quality` 成功，不安装、不写凭据；缺少记录、GitHub 限流或网络失败时停止，不回退 main。已有可信开发 checkout 的维护者也可使用其中的 `scripts/install-from-github.ps1 -Tag v0.3.1 -InstallRoot 'D:\MCP'` 完成同等检查和安装，不能在尚未取得源码时执行不存在的相对脚本。
 
 detached HEAD 是固定发布标签安装的正常状态。依赖落在项目独立 `.venv`；`uv sync --locked --no-dev` 会准备运行环境，不删除锁、不用全局 pip、不重新 `uv init`。日常启动使用 `--no-sync`，不安装、构建或升级依赖。没有额外 Node 构建或必选 extra。
 
@@ -107,7 +107,7 @@ if ($LASTEXITCODE -ne 0) { throw 'MCP 协议检查失败，请查看 stderr。' 
 
 脚本使用该安装的 `.venv`，在临时目录准备无真实权限的假凭据，从无关 cwd 启动真实 stdio 子进程；不读取成员 `.env`，不提交有效绘图请求。每请求/启动限时 30 秒，成功返回 JSON `status: passed`、退出 0；失败非零并在 stderr 提供诊断。测试空密钥实例预期退出 2，stdout 无额外输出。
 
-覆盖两种已声明协议、v0.3.0的21 Tools/6 Prompts/9 Resources、免费计划/查询、输入错误及配置失败。协议成功不等于当前 Host 已加载真实配置，更不证明真实绘图或所有模型可用。配置客户端后，在该 Host 中调用 `list_models`，核对模型、密钥状态、输出目录及sync_generation=true，再做免费计划/历史查询；没有出图授权时停在这里。
+覆盖两种已声明协议、v0.3.1的21 Tools/6 Prompts/9 Resources、免费计划/查询、输入错误及配置失败。协议成功不等于当前 Host 已加载真实配置，更不证明真实绘图或所有模型可用。配置客户端后，在该 Host 中调用 `list_models`，核对模型、密钥状态、输出目录及sync_generation=true，再做免费计划/历史查询；没有出图授权时停在这里。
 
 | 证据类别 | 已有结果与边界 |
 |---|---|
@@ -354,7 +354,7 @@ foreach ($PatchFile in $PatchFiles) {
 ```
 <!-- end-template -->
 
-保存后分别在原生 DSH、App、Multica 中按实际版本重新加载所选 profile 或重启对应 DSH 运行实例；不凭空指定尚未核实的 GUI 按钮。检查补丁加载日志、v0.3.0的21个工具发现，以及工具权限预设：先允许免费计划/查询，generate_images与submit_image_tasks的收费提交权限由使用者决定。App 或 Multica 可能由宿主管理运行时，不假定全局 `dsh.exe` 与其内置运行时版本相同。
+保存后分别在原生 DSH、App、Multica 中按实际版本重新加载所选 profile 或重启对应 DSH 运行实例；不凭空指定尚未核实的 GUI 按钮。检查补丁加载日志、v0.3.1的21个工具发现，以及工具权限预设：先允许免费计划/查询，generate_images与submit_image_tasks的收费提交权限由使用者决定。App 或 Multica 可能由宿主管理运行时，不假定全局 `dsh.exe` 与其内置运行时版本相同。
 
 新版源码已通过独立DSH CLI的21工具发现与免费调用，补齐附件/视觉路由后Agent实际看图也通过，详见docs/DSH-VISION-HOST-VALIDATION.md。原最小profile看图未通过的历史结论保留；三种完整profile、Multica、Desktop GUI与Host Prompt/Resource桥接仍未因此视为通过。工具发现不代表绘图业务验收。
 
@@ -391,7 +391,7 @@ uv --directory 'D:\MCP\zhenzhen-nanobanana-mcp' run --no-sync python -m zhenzhen
 
 ### 已有Git安装的升级与回滚
 
-先在 Host 停用该 MCP 并等待当前业务结束，记录当前 SHA；收费任务失败/中断先按原三元组查询，旧批次按 request_id 查询，不因升级重发。停止所有使用同一输出目录的服务后备份，再执行版本切换。下方以正式公开后的标签v0.3.0为目标；脚本检查发布记录/CI，并对本地改动或冲突停止。保留 .env、NTFS ACL、outputs 及 SQLite 账本；备份放私有目录，不进入 Git。锁定安装不会覆盖 .env。
+先在 Host 停用该 MCP 并等待当前业务结束，记录当前 SHA；收费任务失败/中断先按原三元组查询，旧批次按 request_id 查询，不因升级重发。停止所有使用同一输出目录的服务后备份，再执行版本切换。下方以正式公开后的标签v0.3.1为目标；脚本检查发布记录/CI，并对本地改动或冲突停止。保留 .env、NTFS ACL、outputs 及 SQLite 账本；备份放私有目录，不进入 Git。锁定安装不会覆盖 .env。
 
 ```powershell
 $ErrorActionPreference = 'Stop'
@@ -404,7 +404,7 @@ if ($LASTEXITCODE -ne 0 -or $Changes) { throw 'Git工作区有改动或无法读
 $PreviousCommit = git -C $ProjectDir rev-parse HEAD
 if ($LASTEXITCODE -ne 0) { throw '无法记录更新前版本。' }
 Write-Host "回滚用提交：$PreviousCommit"
-$TargetTag = 'v0.3.0'
+$TargetTag = 'v0.3.1'
 $Evidence = & (Join-Path $ProjectDir 'scripts\install-from-github.ps1') -Tag $TargetTag -VerifyOnly
 $ExpectedCommit = $Evidence.Commit
 git -C $ProjectDir fetch origin tag $TargetTag
@@ -441,7 +441,7 @@ if ($LASTEXITCODE -ne 0) { throw '回滚协议复验失败。' }
 | 来源/内容 | 用途 |
 |---|---|
 | [GitHub仓库](https://github.com/tsyecommercialdesigner-cloud/zhenzhen-nanobanana-mcp) | 默认成员来源；`src/`、元数据/锁/运行时、LICENSE、安全模板、scripts、测试、规范及手册随clone取得 |
-| [Releases](https://github.com/tsyecommercialdesigner-cloud/zhenzhen-nanobanana-mcp/releases) | v0.3.0正式公开后作为安装目标；包含正式tag、完整SHA、CI链接、安装验收记录、sdist/wheel及SHA256SUMS |
+| [Releases](https://github.com/tsyecommercialdesigner-cloud/zhenzhen-nanobanana-mcp/releases) | v0.3.1正式公开后作为安装目标；包含正式tag、完整SHA、CI链接、安装验收记录、sdist/wheel及SHA256SUMS |
 | `.github/workflows/ci.yml` | dev push、PR及默认分支push的Windows quality检查，Python3.12.14、uv0.12.9 |
 | `.github/workflows/release.yml` | 默认分支手动发起，要求同SHA CI成功并重新验收，通过release环境批准后发tag及草稿Release，核对并另获授权后人工公开；不部署远程服务 |
 | `scripts/check.py` | 本地与CI统一格式、lint、类型、测试/覆盖率、文档、契约、秘密/依赖、构建、协议及独立运行安装检查 |
@@ -449,15 +449,15 @@ if ($LASTEXITCODE -ne 0) { throw '回滚协议复验失败。' }
 | `specs/002-github-distribution/` | 本次迁移的需求、方案、任务及验证边界；门禁设置说明见`docs/RELEASE.md` |
 | 本机生成内容 | `.venv`、缓存、dist、test-reports、私有.env和UUID批次图片/账本不进入Git；outputs正式模板仍可跟踪 |
 
-源码安装不要求成员下载wheel或ZIP。开发人员在dev分支提交/推送候选代码后，按授权创建dev→main PR；GitHub分支保护要求必需`quality`与评审，release环境要求审批及标签保护。门禁及受控发布流程见[发布说明](docs/RELEASE.md)，v0.2.2的实际发布/安装证据见[验收报告](docs/RELEASE-0.2.2-ACCEPTANCE.md)。发布需独立授权；本次v0.3.0已获发布授权，先按受控流程生成草稿并核对，再正式公开。六步计划见 docs/DELIVERY-PLAN.md。
+源码安装不要求成员下载wheel或ZIP。开发人员在dev分支提交/推送候选代码后，按授权创建dev→main PR；GitHub分支保护要求必需`quality`与评审，release环境要求审批及标签保护。门禁及受控发布流程见[发布说明](docs/RELEASE.md)，v0.2.2的实际发布/安装证据见[验收报告](docs/RELEASE-0.2.2-ACCEPTANCE.md)。发布需独立授权；本次v0.3.1修复版已获发布授权，先按受控流程生成草稿并核对，再正式公开。六步计划见 docs/DELIVERY-PLAN.md。
 
 ### 可选ZIP（仅按明确需要）
 
-仅保留旧成员明确需要时的补充分发：`pwsh -NoProfile -File './scripts/package-user.ps1'`，白名单`user-files.json`，当前版本元数据对应输出`output/zhenzhen-nanobanana-mcp-0.3.0-user.zip`（本轮不生成或发布）；已有包拒绝覆盖，可显式指定`-DestinationDirectory`。ZIP只有一个`zhenzhen-nanobanana-mcp/`顶层目录，解压到父目录即可。它不携带.env/依赖环境/开发资料/业务图片，也不能代替GitHub CI与正式版本。完整可选验收仍由`verify-delivery.py`执行，本次不额外发布成员ZIP。
+仅保留旧成员明确需要时的补充分发：`pwsh -NoProfile -File './scripts/package-user.ps1'`，白名单`user-files.json`，当前版本元数据对应输出`output/zhenzhen-nanobanana-mcp-0.3.1-user.zip`（本轮不生成或发布）；已有包拒绝覆盖，可显式指定`-DestinationDirectory`。ZIP只有一个`zhenzhen-nanobanana-mcp/`顶层目录，解压到父目录即可。它不携带.env/依赖环境/开发资料/业务图片，也不能代替GitHub CI与正式版本。完整可选验收仍由`verify-delivery.py`执行，本次不额外发布成员ZIP。
 
 ## 7. 资源清单
 
-v0.3.0提供21 Tools、6 Prompts、9 Resources，无资源模板；契约从注册信息导出至 `specs/003-async-image-tasks/contracts/mcp.json`。同步/异步共用持久队列，设计确认与收费授权分开，历史批次查询保留；升级后须让Host重新发现工具。v0.2.2旧安装保持8工具，不能用旧安装验证新版发现结果。
+v0.3.1提供21 Tools、6 Prompts、9 Resources，无资源模板；契约从注册信息导出至 `specs/003-async-image-tasks/contracts/mcp.json`。同步/异步共用持久队列，设计确认与收费授权分开，历史批次查询保留；升级后须让Host重新发现工具。v0.2.2旧安装保持8工具，不能用旧安装验证新版发现结果。
 
 | Tool | 输入 | 输出/副作用 |
 |---|---|---|
@@ -666,7 +666,7 @@ MCP 服务进程必须保持运行。正常退出保留queued，尚未发送的p
 | Python/锁或模块缺失 | 核对完整源码、3.12.14、pyproject.toml 与 uv.lock，再 uv sync --locked --no-dev，不删锁/升级依赖 |
 | .env 空、错误或权限不足 | 检查实际项目根 UTF-8 文件；空值、重复和非法值不能回退，运行账号需有读取权限 |
 | 修改后仍旧行为 | 重启实际 MCP 并重新发现工具，list_models 应有 async_tasks、sync_generation=true和capabilities；仅改开发目录不会更新 D:/MCP 副本 |
-| generate_images / wait_image_tasks 不存在 | 核对实际安装已切换正式v0.3.0并与release-eligibility.json的完整SHA一致，完成锁定安装后重启Host刷新21工具；旧v0.2.1为6工具异步版。历史request_id继续用get_batch_result，不能使用旧同步签名 |
+| generate_images / wait_image_tasks 不存在 | 核对实际安装已切换正式v0.3.1并与release-eligibility.json的完整SHA一致，完成锁定安装后重启Host刷新21工具；旧v0.2.1为6工具异步版。历史request_id继续用get_batch_result，不能使用旧同步签名 |
 | 提交成功却没有图片 | queued/preparing/running 表示已登记，之后查询任务；failed/unknown 查看 error，勿自动换编号 |
 | 不支持所选格式/端点 | 按第 7 节矩阵或 list_models 选择；flash-lite 不支持 dalle，pro 仅 dalle，gemini-nano 不支持 edits |
 | 三元组冲突 | 同键已绑定其他参数，本次无新增；查询旧任务，只有明确的新收费业务才用新编号 |
